@@ -2,20 +2,47 @@
 
 import React, { useState } from 'react';
 import { Theorem } from '../data/mockTheorems';
+import { Filters } from './FilterPanel';
 import { ThumbsUp, ThumbsDown, User, BookOpen } from 'lucide-react';
 import { motion } from 'motion/react';
 import { MathJax } from 'better-react-mathjax';
-import { cleanLatexForDisplay } from '../lib/latexClean';
+import { cleanLatexForDisplay, cleanTheoremName } from '../lib/latexClean';
 
 interface TheoremCardProps {
   theorem: Theorem;
+  activeQuery: string;
+  filters: Filters;
 }
 
-export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem }) => {
+export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, filters }) => {
   const [showSlogan, setShowSlogan] = useState(true);
   const [showLatex, setShowLatex] = useState(false);
+  const [vote, setVote] = useState<1 | -1 | null>(null);
 
   const cleanedBody = cleanLatexForDisplay(theorem.theorem_body);
+  const displayName = cleanTheoremName(theorem.theorem_name);
+
+  const submitFeedback = async (v: 1 | -1) => {
+    if (vote !== null) return;
+    setVote(v);
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vote: v,
+          slogan_id: theorem.slogan_id,
+          query: activeQuery,
+          url: theorem.link,
+          theorem_name: theorem.theorem_name,
+          authors: theorem.authors,
+          filters,
+        }),
+      });
+    } catch {
+      // fire-and-forget; don't undo the optimistic UI state
+    }
+  };
 
   return (
     <motion.div
@@ -28,7 +55,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem }) => {
         <div className="flex flex-col gap-0.5 min-w-0">
           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-900 tracking-tight">
             <span className="truncate">
-              {theorem.theorem_name}
+              {displayName}
               {theorem.title && (
                 <span className="ml-1.5 font-normal text-slate-500 italic">
                   — {theorem.title}
@@ -96,12 +123,34 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem }) => {
 
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <button className="p-1.5 text-slate-400 hover:text-brand transition-colors" title="Upvote">
+          {/* Feedback */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => submitFeedback(1)}
+              disabled={vote !== null}
+              title={vote === 1 ? 'Upvoted' : 'Upvote'}
+              className={`p-1.5 transition-colors ${
+                vote === 1
+                  ? 'text-brand'
+                  : vote !== null
+                  ? 'text-slate-200 cursor-default'
+                  : 'text-slate-400 hover:text-brand'
+              }`}
+            >
               <ThumbsUp size={14} />
             </button>
-            <button className="p-1.5 text-slate-400 hover:text-red-600 transition-colors" title="Downvote">
+            <button
+              onClick={() => submitFeedback(-1)}
+              disabled={vote !== null}
+              title={vote === -1 ? 'Downvoted' : 'Downvote'}
+              className={`p-1.5 transition-colors ${
+                vote === -1
+                  ? 'text-red-500'
+                  : vote !== null
+                  ? 'text-slate-200 cursor-default'
+                  : 'text-slate-400 hover:text-red-500'
+              }`}
+            >
               <ThumbsDown size={14} />
             </button>
           </div>
@@ -137,7 +186,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem }) => {
             className="overflow-hidden"
           >
             <div className="py-3 px-4 bg-slate-50 rounded-lg border border-slate-100 overflow-x-auto">
-              <p className="text-[10px] font-bold text-slate-500 mb-1.5">{theorem.theorem_name}</p>
+              <p className="text-[10px] font-bold text-slate-500 mb-1.5">{displayName}</p>
               <div className="text-sm text-slate-800">
                 <MathJax dynamic>{cleanedBody}</MathJax>
               </div>

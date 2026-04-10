@@ -14,6 +14,7 @@ interface SearchFilters {
   types?: string[];
   authors?: string[];
   categories?: string[];
+  publicationStatus?: string[];
   yearMin?: number;
   yearMax?: number;
   topK?: number;
@@ -64,6 +65,14 @@ async function fetchCandidates(
     if (filters.types?.length)      extra.push(`theorem_type = ANY(${p(filters.types)})`);
     if (filters.authors?.length)    extra.push(`authors && ${p(filters.authors)}`);
     if (filters.categories?.length) extra.push(`primary_category = ANY(${p(filters.categories)})`);
+
+    if (filters.publicationStatus?.length) {
+      const clauses: string[] = [];
+      if (filters.publicationStatus.includes('Published')) clauses.push('journal_published = true');
+      if (filters.publicationStatus.includes('Preprint'))  clauses.push('journal_published = false');
+      if (clauses.length) extra.push(`(${clauses.join(' OR ')})`);
+    }
+
     if (filters.yearMin != null)    extra.push(`year >= ${p(filters.yearMin)}`);
     if (filters.yearMax != null)    extra.push(`year <= ${p(filters.yearMax)}`);
 

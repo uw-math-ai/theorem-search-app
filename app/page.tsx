@@ -33,6 +33,7 @@ function makeDefaultFilters(
     types: [],
     authors: [],
     categories: [],
+    publicationStatus: [],
     yearMin,
     yearMax,
     topK: 20,
@@ -54,6 +55,7 @@ function countActiveFilters(f: Filters, yearMin: number, yearMax: number, citati
   if (f.types.length) n++;
   if (f.authors.length) n++;
   if (f.categories.length) n++;
+  if (f.publicationStatus.length) n++;
   if (f.yearMin !== yearMin || f.yearMax !== yearMax) n++;
   if (f.citationMin > 0 || f.citationMax < citationMax) n++;
   if (!f.includeUnknownCitations) n++;
@@ -112,6 +114,12 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Search failed');
       setResults(data.results);
+      // Log query fire-and-forget
+      fetch('/api/log-query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, filters: f }),
+      }).catch(() => {});
     } catch (err) {
       setSearchError(String(err));
     } finally {
@@ -304,7 +312,9 @@ export default function App() {
 
               <div className="grid gap-4">
                 {paginatedResults.length > 0 ? (
-                  paginatedResults.map(t => <TheoremCard key={t.slogan_id} theorem={t} />)
+                  paginatedResults.map(t => (
+                    <TheoremCard key={t.slogan_id} theorem={t} activeQuery={activeQuery} filters={filters} />
+                  ))
                 ) : (
                   <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-2xl">
                     <p className="text-slate-400">No theorems found for &ldquo;{activeQuery}&rdquo;.</p>
@@ -369,23 +379,22 @@ export default function App() {
               <span className="font-bold text-slate-900">Theorem<span className="text-brand">Search</span></span>
             </a>
             <p className="text-xs text-slate-500 leading-relaxed">
-              An open-source project dedicated to making mathematical knowledge more accessible through semantic search and plain-language summaries.
+              An open-source semantic search tool that accelerates math research.
             </p>
           </div>
           <div>
-            <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">Explore</h4>
+            <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">Data</h4>
             <ul className="space-y-2 text-sm text-slate-600">
-              <li><a href="#" className="hover:text-brand transition-colors">Overview</a></li>
-              <li><a href="#" className="hover:text-brand transition-colors">arXiv Preprint</a></li>
-              <li><a href="#" className="hover:text-brand transition-colors">MCP Tool</a></li>
+              <li><a href="https://huggingface.co/uw-math-ai/datasets" className="hover:text-brand transition-colors">Download</a></li>
+              <li><a href="/docs" className="hover:text-brand transition-colors">API</a></li>
+              <li><a href="https://github.com/uw-math-ai/arXiTeX" className="hover:text-brand transition-colors">arXiTeX</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">Datasets</h4>
+            <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">Research</h4>
             <ul className="space-y-2 text-sm text-slate-600">
-              <li><a href="#" className="hover:text-brand transition-colors">Download</a></li>
-              <li><a href="#" className="hover:text-brand transition-colors">API Documentation</a></li>
-              <li><a href="#" className="hover:text-brand transition-colors">Data Sources</a></li>
+              <li><a href="/overview" className="hover:text-brand transition-colors">Overview</a></li>
+              <li><a href="https://arxiv.org/abs/2602.05216" className="hover:text-brand transition-colors">Preprint</a></li>
             </ul>
           </div>
           <div>
@@ -399,9 +408,8 @@ export default function App() {
         <div className="max-w-5xl mx-auto px-4 mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-slate-400">
           <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
           <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-slate-600">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-600">Terms of Service</a>
-            <a href="#" className="hover:text-slate-600">Cookie Policy</a>
+            <a href="/privacy" className="hover:text-slate-600">Privacy Policy</a>
+            <a href="/improve" className="hover:text-slate-600">Help us Improve</a>
           </div>
         </div>
       </footer>

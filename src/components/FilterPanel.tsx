@@ -9,6 +9,7 @@ export interface Filters {
   types: string[];
   authors: string[];
   categories: string[];
+  publicationStatus: string[];
   yearMin: number;
   yearMax: number;
   topK: number;
@@ -165,10 +166,12 @@ function AuthorSelect({
   options,
   selected,
   onChange,
+  fillHeight = false,
 }: {
   options: string[];
   selected: string[];
   onChange: (next: string[]) => void;
+  fillHeight?: boolean;
 }) {
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
@@ -183,7 +186,7 @@ function AuthorSelect({
   const hiddenCount = options.length - visible.length;
 
   return (
-    <div>
+    <div className={fillHeight ? 'flex flex-col h-full' : undefined}>
       <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">AUTHORS</p>
       <div className="relative mb-1.5">
         <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -203,7 +206,7 @@ function AuthorSelect({
           </button>
         )}
       </div>
-      <div className="max-h-36 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
+      <div className={`overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 ${fillHeight ? 'flex-1 min-h-0' : 'max-h-36'}`}>
         {visible.map(author => (
           <label
             key={author}
@@ -248,6 +251,7 @@ export default function FilterPanel({
   activeCount,
   onClear,
 }: FilterPanelProps) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   return (
@@ -280,6 +284,7 @@ export default function FilterPanel({
             )}
           </div>
 
+          {/* Main filters: Source, Category, Results per Search */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <PillGroup
               label="SOURCE"
@@ -287,59 +292,12 @@ export default function FilterPanel({
               selected={filters.sources}
               onChange={sources => setFilters({ ...filters, sources })}
             />
-            <PillGroup
-              label="RESULT TYPE"
-              options={availableTypes}
-              selected={filters.types}
-              onChange={types => setFilters({ ...filters, types })}
-              displayFn={capitalize}
-            />
             <SearchablePillGroup
               label="CATEGORY"
               options={availableCategories}
               selected={filters.categories}
               onChange={categories => setFilters({ ...filters, categories })}
             />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <AuthorSelect
-              options={availableAuthors}
-              selected={filters.authors}
-              onChange={authors => setFilters({ ...filters, authors })}
-            />
-
-            {/* Year range */}
-            <div>
-              <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">YEAR RANGE</p>
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-[10px] text-slate-400">From</label>
-                  <input
-                    type="number"
-                    min={absoluteYearMin}
-                    max={filters.yearMax}
-                    value={filters.yearMin}
-                    onChange={e => setFilters({ ...filters, yearMin: Math.min(Number(e.target.value), filters.yearMax) })}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
-                  />
-                </div>
-                <span className="text-slate-300 mt-5">—</span>
-                <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-[10px] text-slate-400">To</label>
-                  <input
-                    type="number"
-                    min={filters.yearMin}
-                    max={absoluteYearMax}
-                    value={filters.yearMax}
-                    onChange={e => setFilters({ ...filters, yearMax: Math.max(Number(e.target.value), filters.yearMin) })}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Results count */}
             <div>
               <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">
                 RESULTS PER SEARCH
@@ -359,60 +317,164 @@ export default function FilterPanel({
             </div>
           </div>
 
-          {/* Row 3: arXiv-specific filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Paper / arXiv ID filter */}
-            <div>
-              <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">PAPER / ARXIV ID</p>
-              <input
-                type="text"
-                value={filters.paperFilter}
-                onChange={e => setFilters({ ...filters, paperFilter: e.target.value })}
-                placeholder="e.g. 2401.12345, Finite Hilbert stability"
-                className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-brand bg-white"
-              />
-              <p className="mt-1 text-[10px] text-slate-400">Comma-separated arXiv IDs or title keywords</p>
-            </div>
+          {/* Advanced filters toggle */}
+          <button
+            onClick={() => setShowAdvanced(v => !v)}
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 hover:text-brand transition-colors"
+          >
+            <motion.span
+              animate={{ rotate: showAdvanced ? 90 : 0 }}
+              transition={{ duration: 0.15 }}
+              className="inline-block"
+            >
+              ▶
+            </motion.span>
+            Advanced filters
+          </button>
 
-            {/* Citation range */}
-            <div>
-              <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">CITATIONS</p>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-[10px] text-slate-400">Min</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={filters.citationMax}
-                    value={filters.citationMin}
-                    onChange={e => setFilters({ ...filters, citationMin: Math.min(Number(e.target.value), filters.citationMax) })}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
-                  />
+          {/* Advanced filters: Result Type, Authors, Year Range, Paper Filter, Citations */}
+          <AnimatePresence initial={false}>
+            {showAdvanced && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Left: Result Type, Publication Status, Paper/ArXiv ID */}
+                    <div className="space-y-4">
+                      <PillGroup
+                        label="RESULT TYPE"
+                        options={availableTypes}
+                        selected={filters.types}
+                        onChange={types => setFilters({ ...filters, types })}
+                        displayFn={capitalize}
+                      />
+
+                      <div>
+                        <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">PUBLICATION STATUS</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(['All', 'Published', 'Preprint'] as const).map(opt => {
+                            const active = opt === 'All'
+                              ? filters.publicationStatus.length === 0
+                              : filters.publicationStatus.includes(opt);
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => setFilters({
+                                  ...filters,
+                                  publicationStatus: opt === 'All' || active ? [] : [opt],
+                                })}
+                                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                                  active
+                                    ? 'bg-brand text-white border-brand shadow-sm'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:border-brand/50 hover:text-brand'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">PAPER / ARXIV ID</p>
+                        <input
+                          type="text"
+                          value={filters.paperFilter}
+                          onChange={e => setFilters({ ...filters, paperFilter: e.target.value })}
+                          placeholder="e.g. 2401.12345, Finite Hilbert stability"
+                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-brand bg-white"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-400">Comma-separated arXiv IDs or title keywords</p>
+                      </div>
+                    </div>
+
+                    {/* Middle: Authors spanning full height */}
+                    <AuthorSelect
+                      options={availableAuthors}
+                      selected={filters.authors}
+                      onChange={authors => setFilters({ ...filters, authors })}
+                    />
+
+                    {/* Right: Year Range, Citations */}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">YEAR RANGE</p>
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-1 flex-1">
+                            <label className="text-[10px] text-slate-400">From</label>
+                            <input
+                              type="number"
+                              min={absoluteYearMin}
+                              max={filters.yearMax}
+                              value={filters.yearMin}
+                              onChange={e => setFilters({ ...filters, yearMin: Math.min(Number(e.target.value), filters.yearMax) })}
+                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
+                            />
+                          </div>
+                          <span className="text-slate-300 mt-5">—</span>
+                          <div className="flex flex-col gap-1 flex-1">
+                            <label className="text-[10px] text-slate-400">To</label>
+                            <input
+                              type="number"
+                              min={filters.yearMin}
+                              max={absoluteYearMax}
+                              value={filters.yearMax}
+                              onChange={e => setFilters({ ...filters, yearMax: Math.max(Number(e.target.value), filters.yearMin) })}
+                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">CITATIONS</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="flex flex-col gap-1 flex-1">
+                            <label className="text-[10px] text-slate-400">Min</label>
+                            <input
+                              type="number"
+                              min={0}
+                              max={filters.citationMax}
+                              value={filters.citationMin}
+                              onChange={e => setFilters({ ...filters, citationMin: Math.min(Number(e.target.value), filters.citationMax) })}
+                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
+                            />
+                          </div>
+                          <span className="text-slate-300 mt-5">—</span>
+                          <div className="flex flex-col gap-1 flex-1">
+                            <label className="text-[10px] text-slate-400">Max</label>
+                            <input
+                              type="number"
+                              min={filters.citationMin}
+                              max={absoluteCitationMax}
+                              value={filters.citationMax}
+                              onChange={e => setFilters({ ...filters, citationMax: Math.max(Number(e.target.value), filters.citationMin) })}
+                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
+                            />
+                          </div>
+                        </div>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={filters.includeUnknownCitations}
+                            onChange={e => setFilters({ ...filters, includeUnknownCitations: e.target.checked })}
+                            className="accent-brand w-3.5 h-3.5 shrink-0"
+                          />
+                          <span className="text-[11px] text-slate-600">Include papers with unknown citation count</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-slate-300 mt-5">—</span>
-                <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-[10px] text-slate-400">Max</label>
-                  <input
-                    type="number"
-                    min={filters.citationMin}
-                    max={absoluteCitationMax}
-                    value={filters.citationMax}
-                    onChange={e => setFilters({ ...filters, citationMax: Math.max(Number(e.target.value), filters.citationMin) })}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
-                  />
-                </div>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filters.includeUnknownCitations}
-                  onChange={e => setFilters({ ...filters, includeUnknownCitations: e.target.checked })}
-                  className="accent-brand w-3.5 h-3.5"
-                />
-                <span className="text-[11px] text-slate-600">Include papers with unknown citation count</span>
-              </label>
-            </div>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

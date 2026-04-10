@@ -29,6 +29,23 @@ function normalizeAlignBlocks(text: string): string {
   );
 }
 
+/**
+ * Cleans misparsed theorem names for display.
+ * Iteratively strips balanced parenthetical groups (handles nesting),
+ * then trims stray whitespace and punctuation.
+ */
+export function cleanTheoremName(name: string): string {
+  if (!name) return name;
+  let result = name;
+  let prev = '';
+  while (result !== prev) {
+    prev = result;
+    result = result.replace(/\([^()]*\)/g, '');
+  }
+  // Trim trailing punctuation and whitespace left behind
+  return result.replace(/[\s,;:.–—]+$/, '').trim();
+}
+
 export function cleanLatexForDisplay(text: string): string {
   if (!text) return text;
 
