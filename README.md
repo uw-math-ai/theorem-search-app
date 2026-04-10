@@ -6,7 +6,7 @@
 <a href="https://arxiv.org/abs/2602.05216"><img src="https://img.shields.io/badge/arXiv-2602.05216-b31b1b.svg" alt="arXiv"></a>
 <a href="https://huggingface.co/papers/2602.05216"><img src="https://img.shields.io/badge/HF-Paper-yellow.svg" alt="HF Paper"></a>
 <a href="https://huggingface.co/datasets/uw-math-ai/theorem-search-dataset"><img src="https://img.shields.io/badge/Dataset-Theorem_Search-blue.svg" alt="Dataset"></a>
-<a href="https://huggingface.co/spaces/uw-math-ai/theorem-search"><img src="https://img.shields.io/badge/Demo-Live-green.svg" alt="Demo"></a>
+<a href="https://theoremsearch.com"><img src="https://img.shields.io/badge/Demo-Live-green.svg" alt="Demo"></a>
 <a href="https://chatgpt.com/g/g-6994f4d1eb7c8191a1a8b6aad90e1449-mathgpt"><img src="https://img.shields.io/badge/MathGPT-Custom_GPT-74aa9c.svg" alt="MathGPT"></a>
 </p>
 
@@ -22,7 +22,7 @@
 We release **Theorem Search** ([paper](https://huggingface.co/papers/2602.05216), [dataset](https://huggingface.co/datasets/uw-math-ai/theorem-search-dataset)) over all of arXiv, the Stacks Project, and six other sources. Our search is **70% more accurate than LLM search**, with only **5 second latency**.
 
 <p style="text-align: center; margin: 2em 0;">
-  <a href="https://huggingface.co/spaces/uw-math-ai/theorem-search" style="display: inline-block; padding: 12px 32px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-size: 1.2em; font-weight: bold;">Try TheoremSearch</a>
+  <a href="https://theoremsearch.com" style="display: inline-block; padding: 12px 32px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-size: 1.2em; font-weight: bold;">Try TheoremSearch</a>
 </p>
 
 <table>
