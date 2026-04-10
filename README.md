@@ -1,7 +1,3 @@
----
-layout: default
----
-
 <p style="text-align: center;">
 <strong><a href="https://www.linkedin.com/in/lukealexanderluke/">Luke Alexander</a>, <a href="https://github.com/ericleonen">Eric Leonen</a>, <a href="https://www.linkedin.com/in/sophie-szeto/">Sophie Szeto</a>, <a href="https://www.linkedin.com/in/artemii-remizov-62783631b/">Artemii Remizov</a>, <a href="https://www.ignaciotejeda.com/">Ignacio Tejeda</a>, <a href="https://sites.math.washington.edu/~ginchios/">Giovanni Inchiostro</a>, <a href="https://vilin97.github.io/">Vasily Ilin</a></strong>
 </p>
