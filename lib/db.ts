@@ -8,10 +8,10 @@ declare global {
 
 async function fetchSecret() {
   const sm = new SecretsManagerClient({
-    region: process.env.AWS_REGION,
+    region: process.env.APP_AWS_REGION,
     credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      accessKeyId: process.env.APP_AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.APP_AWS_SECRET_ACCESS_KEY!,
     },
   });
   const res = await sm.send(new GetSecretValueCommand({ SecretId: process.env.RDS_SECRET_ARN }));
