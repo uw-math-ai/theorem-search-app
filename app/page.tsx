@@ -188,12 +188,12 @@ export default function OverviewPage() {
               <a href="https://www.erdosproblems.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Erdős problems</a>{' '}
               illustrate this: most turned out to be rediscoveries of results already in the literature. As{' '}
               <a href="https://terrytao.wordpress.com/2025/11/05/mathematical-exploration-and-discovery-at-scale/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Tao observed</a>,
-              many &ldquo;open&rdquo; problems are open through obscurity, not difficulty.{' '}
+              many &ldquo;open&rdquo; problems are open through obscurity rather than difficulty.{' '}
               <a href="https://arxiv.org/abs/2602.10177" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">DeepMind&rsquo;s Aletheia</a>{' '}
-              confirmed this — most of its correct solutions were identifications of existing literature.
+              confirmed this: most of its correct solutions were identifications of existing literature.
             </p>
             <p className="text-slate-600 leading-relaxed">
-              <strong>For AI agents</strong>, the bottleneck is the same. Without the relevant literature, LLMs confabulate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
+              <strong>For AI agents</strong>, the bottleneck is the same. Without the relevant literature, LLMs fabricate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
             </p>
           </section>
 
