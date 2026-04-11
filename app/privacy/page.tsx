@@ -5,11 +5,11 @@ export const metadata = { title: 'Privacy Policy — TheoremSearch' };
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/30">
+    <div className="min-h-screen flex flex-col bg-white">
       <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-3.5">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Image src="/math-ai-logo.jpg" alt="Math AI Lab" width={26} height={26} className="rounded-lg" />
+            <Image src="/math-ai-logo.jpg" alt="Math AI Lab" width={26} height={26} className="rounded" />
             <span className="font-bold text-slate-900">
               Theorem<span className="text-brand">Search</span>
             </span>
@@ -29,17 +29,23 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-slate-800">What we collect</h2>
           <p className="text-sm text-slate-600 leading-relaxed">
-            When you search, we log the query text and the filters you applied (sources, result type, year range, etc.). When you submit a thumbs up or thumbs down on a result, we log the vote, the query, and the theorem name and link you voted on.
+            When you search, we log the query text and the filters you applied (sources, result type, year range, etc.).
           </p>
           <p className="text-sm text-slate-600 leading-relaxed">
-            We do not collect your name, email address, or any account information. We use your IP address solely for rate limiting — it is not stored alongside your queries or votes.
+            When you submit a thumbs up or thumbs down on a result, we log the vote, the query, and the theorem name and link you voted on.
+          </p>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            When you submit a report on a result, we log the selected reasons and, if you provided one, your free-text description. We also log the query and the theorem link associated with the report.
+          </p>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            We do not collect your name, email address, or any account information. We use your IP address solely for rate limiting. It is not stored alongside your queries, votes, or reports.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-base font-bold text-slate-800">How we use it</h2>
           <p className="text-sm text-slate-600 leading-relaxed">
-            Query logs help us understand how TheoremSearch is used and which areas of mathematics people search most. Feedback votes are used to evaluate and improve search quality. We do not sell or share this data with third parties.
+            Query logs help us understand how TheoremSearch is used and which areas of mathematics people search most. Feedback votes are used to evaluate and improve search quality. Reports are used to identify and fix systematic issues in slogan generation and theorem parsing. We do not sell or share this data with third parties.
           </p>
         </section>
 

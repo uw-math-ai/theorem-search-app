@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search, Filter, Info, Loader2 } from 'lucide-react';
@@ -178,19 +178,6 @@ export default function App() {
   const citationMax = metadata?.citationMax ?? 10_000;
   const activeCount = countActiveFilters(filters, yearMin, yearMax, citationMax);
 
-  // Keep input right-padding in sync with the actual button group width
-  const searchButtonGroupRef = useRef<HTMLDivElement>(null);
-  const [inputPaddingRight, setInputPaddingRight] = useState(128);
-  useEffect(() => {
-    const update = () => {
-      if (searchButtonGroupRef.current) {
-        setInputPaddingRight(searchButtonGroupRef.current.offsetWidth + 8);
-      }
-    };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, [activeCount]);
 
   // Pagination
   const totalPages = results ? Math.ceil(results.length / resultsPerPage) : 0;
@@ -215,52 +202,51 @@ export default function App() {
                 alt="Math AI Lab"
                 width={40}
                 height={40}
-                className="rounded-xl shadow-sm shadow-brand/20"
+                className="rounded"
               />
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                 Theorem<span className="text-brand">Search</span>
               </h1>
             </Link>
 
-            <div className="relative w-full">
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <Search className="text-slate-400" size={18} />
+            <div className="flex items-center gap-1.5 w-full">
+              <div className="relative flex-1 min-w-0">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <Search className="text-slate-400" size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Describe a theorem (e.g. The Jones polynomial is link invariant)"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-base"
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  maxLength={1000}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Describe a theorem (e.g. The Jones polynomial is link invariant)"
-                className="w-full pl-10 py-3 bg-white border border-slate-200 rounded-2xl focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-base shadow-sm"
-                style={{ paddingRight: inputPaddingRight }}
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                maxLength={1000}
-                onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
-              />
-              <div ref={searchButtonGroupRef} className="absolute inset-y-1.5 right-1.5 flex items-center gap-1">
-                <button
-                  onClick={() => setShowFilters(v => !v)}
-                  className={`px-3 py-1.5 border rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
-                    showFilters || activeCount > 0
-                      ? 'bg-brand text-white border-brand'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
-                  }`}
-                >
-                  <Filter size={14} />
-                  Filters
-                  {activeCount > 0 && (
-                    <span className="bg-white/30 rounded-full px-1.5 py-0.5 text-[10px] leading-none">
-                      {activeCount}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={handleSearch}
-                  disabled={!searchInput.trim() || isSearching}
-                  className="px-3 py-1.5 bg-brand text-white border border-brand rounded-lg text-xs font-semibold hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Search
-                </button>
-              </div>
+              <button
+                onClick={() => setShowFilters(v => !v)}
+                className={`shrink-0 px-3 py-3 border rounded flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                  showFilters || activeCount > 0
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
+                }`}
+              >
+                <Filter size={14} />
+                <span className="hidden sm:inline">Filters</span>
+                {activeCount > 0 && (
+                  <span className="bg-white/30 rounded-full px-1.5 py-0.5 text-[10px] leading-none">
+                    {activeCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={handleSearch}
+                disabled={!searchInput.trim() || isSearching}
+                className="shrink-0 px-3 py-3 bg-brand text-white border border-brand rounded text-xs font-semibold hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Search
+              </button>
             </div>
           </div>
         </section>
@@ -307,7 +293,7 @@ export default function App() {
           )}
 
           {searchError && !isSearching && (
-            <div className="text-center py-16 bg-red-50 border border-red-200 rounded-2xl">
+            <div className="text-center py-16 bg-red-50 border border-red-200 rounded">
               <p className="text-red-600 text-sm font-medium">Search failed</p>
               <p className="text-red-400 text-xs mt-1">{searchError}</p>
             </div>
@@ -331,7 +317,7 @@ export default function App() {
                     <TheoremCard key={t.slogan_id} theorem={t} activeQuery={activeQuery} filters={filters} />
                   ))
                 ) : (
-                  <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-2xl">
+                  <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded">
                     <p className="text-slate-400">No theorems found for &ldquo;{activeQuery}&rdquo;.</p>
                   </div>
                 )}
@@ -341,7 +327,7 @@ export default function App() {
               {totalPages > 1 && (
                 <div className="flex justify-center mt-12 gap-2">
                   <button
-                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-white border border-slate-200 rounded text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                   >
@@ -351,9 +337,9 @@ export default function App() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      className={`px-4 py-2 rounded text-sm font-medium transition-all ${
                         currentPage === page
-                          ? 'bg-brand text-white shadow-sm shadow-brand/20'
+                          ? 'bg-brand text-white'
                           : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
@@ -361,7 +347,7 @@ export default function App() {
                     </button>
                   ))}
                   <button
-                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-white border border-slate-200 rounded text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                   >
@@ -387,7 +373,7 @@ export default function App() {
                 alt="Math AI Lab"
                 width={24}
                 height={24}
-                className="rounded shadow-sm"
+                className="rounded"
               />
               <span className="font-bold text-slate-900">Theorem<span className="text-brand">Search</span></span>
             </Link>

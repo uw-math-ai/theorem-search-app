@@ -65,7 +65,7 @@ function PillGroup({
               onClick={() => onChange(toggleItem(selected, opt))}
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
                 active
-                  ? 'bg-brand text-white border-brand shadow-sm'
+                  ? 'bg-brand text-white border-brand'
                   : 'bg-white text-slate-600 border-slate-200 hover:border-brand/50 hover:text-brand'
               }`}
             >
@@ -117,7 +117,7 @@ function SearchablePillGroup({
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder={`Search ${options.length} categories…`}
-          className="w-full pl-7 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-brand bg-slate-50"
+          className="w-full pl-7 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-brand bg-slate-50"
         />
         {query && (
           <button
@@ -137,7 +137,7 @@ function SearchablePillGroup({
               onClick={() => onChange(toggleItem(selected, opt))}
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
                 active
-                  ? 'bg-brand text-white border-brand shadow-sm'
+                  ? 'bg-brand text-white border-brand'
                   : 'bg-white text-slate-600 border-slate-200 hover:border-brand/50 hover:text-brand'
               }`}
             >
@@ -196,7 +196,7 @@ function AuthorSelect({
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder={`Search ${options.length} authors…`}
-          className="w-full pl-7 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-brand bg-slate-50"
+          className="w-full pl-7 pr-3 py-1.5 text-xs border border-slate-200 rounded focus:outline-none focus:border-brand bg-slate-50"
         />
         {query && (
           <button
@@ -207,7 +207,7 @@ function AuthorSelect({
           </button>
         )}
       </div>
-      <div className={`overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100 ${fillHeight ? 'flex-1 min-h-0' : 'max-h-36'}`}>
+      <div className={`overflow-y-auto rounded border border-slate-200 bg-white divide-y divide-slate-100 ${fillHeight ? 'flex-1 min-h-0' : 'max-h-36'}`}>
         {visible.map(author => (
           <label
             key={author}
@@ -263,7 +263,7 @@ export default function FilterPanel({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-5"
+          className="bg-white border border-slate-200 rounded p-5 space-y-5"
         >
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -371,7 +371,7 @@ export default function FilterPanel({
                                 })}
                                 className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
                                   active
-                                    ? 'bg-brand text-white border-brand shadow-sm'
+                                    ? 'bg-brand text-white border-brand'
                                     : 'bg-white text-slate-600 border-slate-200 hover:border-brand/50 hover:text-brand'
                                 }`}
                               >
@@ -390,7 +390,7 @@ export default function FilterPanel({
                           onChange={e => setFilters({ ...filters, paperFilter: e.target.value })}
                           placeholder="e.g. 2401.12345, Finite Hilbert stability"
                           maxLength={500}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-brand bg-white"
+                          className="w-full border border-slate-200 rounded px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-brand bg-white"
                         />
                         <p className="mt-1 text-[10px] text-slate-400">Comma-separated arXiv IDs or title keywords</p>
                       </div>
@@ -416,7 +416,7 @@ export default function FilterPanel({
                               max={filters.yearMax}
                               value={filters.yearMin}
                               onChange={e => setFilters({ ...filters, yearMin: Math.min(Number(e.target.value), filters.yearMax) })}
-                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
+                              className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
                             />
                           </div>
                           <span className="text-slate-300 mt-5">—</span>
@@ -428,7 +428,7 @@ export default function FilterPanel({
                               max={absoluteYearMax}
                               value={filters.yearMax}
                               onChange={e => setFilters({ ...filters, yearMax: Math.max(Number(e.target.value), filters.yearMin) })}
-                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
+                              className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
                             />
                           </div>
                         </div>
@@ -445,7 +445,7 @@ export default function FilterPanel({
                               max={filters.citationMax}
                               value={filters.citationMin}
                               onChange={e => setFilters({ ...filters, citationMin: Math.min(Number(e.target.value), filters.citationMax) })}
-                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
+                              className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
                             />
                           </div>
                           <span className="text-slate-300 mt-5">—</span>
@@ -457,7 +457,7 @@ export default function FilterPanel({
                               max={absoluteCitationMax}
                               value={filters.citationMax}
                               onChange={e => setFilters({ ...filters, citationMax: Math.max(Number(e.target.value), filters.citationMin) })}
-                              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
+                              className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
                             />
                           </div>
                         </div>

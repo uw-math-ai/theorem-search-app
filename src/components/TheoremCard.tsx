@@ -86,7 +86,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white border border-slate-200 rounded-md overflow-hidden shadow-sm hover:border-slate-300 transition-all duration-200"
+      className="bg-white border border-slate-200 rounded overflow-hidden hover:border-slate-300 transition-all duration-200"
     >
       {/* Header */}
       <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -126,12 +126,12 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
         <div className="flex items-center justify-between sm:justify-end gap-3">
           {/* Toggles & Link */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <div className="flex items-center bg-slate-100 p-0.5 rounded border border-slate-200">
               <button
                 onClick={() => setShowSlogan(v => !v)}
-                className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
+                className={`px-2 py-1 rounded text-[9px] font-bold transition-all ${
                   showSlogan
-                    ? 'bg-white text-brand shadow-sm'
+                    ? 'bg-white text-brand'
                     : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
@@ -139,9 +139,9 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
               </button>
               <button
                 onClick={() => setShowLatex(v => !v)}
-                className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
+                className={`px-2 py-1 rounded text-[9px] font-bold transition-all ${
                   showLatex
-                    ? 'bg-white text-brand shadow-sm'
+                    ? 'bg-white text-brand'
                     : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
@@ -153,7 +153,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
               href={theorem.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[9px] font-bold text-brand hover:bg-brand hover:text-white transition-all shadow-sm active:scale-95"
+              className="px-2 py-1 bg-white border border-slate-200 rounded text-[9px] font-bold text-brand hover:bg-brand hover:text-white transition-all active:scale-95"
             >
               Link
             </a>
@@ -243,7 +243,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
                         placeholder="Please describe the issue…"
                         maxLength={500}
                         autoFocus
-                        className="mt-1.5 ml-5 w-[calc(100%-1.25rem)] border border-slate-200 rounded-md px-2.5 py-1 text-xs text-slate-700 focus:outline-none focus:border-orange-300 bg-white"
+                        className="mt-1.5 ml-5 w-[calc(100%-1.25rem)] border border-slate-200 rounded px-2.5 py-1 text-xs text-slate-700 focus:outline-none focus:border-orange-300 bg-white"
                       />
                     )}
                   </div>
@@ -259,7 +259,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
                 <button
                   onClick={submitReport}
                   disabled={selectedReasons.length === 0}
-                  className="px-2.5 py-1 text-[10px] font-bold bg-orange-400 text-white rounded-md hover:bg-orange-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-2.5 py-1 text-[10px] font-bold bg-orange-400 text-white rounded hover:bg-orange-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Submit report
                 </button>
@@ -297,7 +297,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="py-3 px-4 bg-slate-50 rounded-lg border border-slate-100 overflow-x-auto">
+            <div className="py-3 px-4 bg-slate-50 rounded border border-slate-100 overflow-x-auto">
               <p className="text-[10px] font-bold text-slate-500 mb-1.5">{displayName}</p>
               <div className="text-sm text-slate-800">
                 <MathJax dynamic>{cleanedBody}</MathJax>

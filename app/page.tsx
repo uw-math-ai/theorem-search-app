@@ -14,7 +14,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
 
 function CodeBlock({ children }: { children: string }) {
   return (
-    <pre className="bg-slate-900 text-slate-100 rounded-xl p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
+    <pre className="bg-slate-900 text-slate-100 rounded-md p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
       <code>{children}</code>
     </pre>
   );
@@ -28,13 +28,6 @@ const AUTHORS = [
   { name: 'Ignacio Tejeda',      href: 'https://www.ignaciotejeda.com/' },
   { name: 'Giovanni Inchiostro', href: 'https://sites.math.washington.edu/~ginchios/' },
   { name: 'Vasily Ilin',         href: 'https://vilin97.github.io/' },
-];
-
-const BADGES = [
-  { label: 'arXiv 2602.05216', href: 'https://arxiv.org/abs/2602.05216',                                 className: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100' },
-  { label: 'Hugging Face',     href: 'https://huggingface.co/papers/2602.05216',                          className: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
-  { label: 'Dataset',          href: 'https://huggingface.co/datasets/uw-math-ai/theorem-search-dataset', className: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' },
-  { label: 'MathGPT',          href: 'https://chatgpt.com/g/g-6994f4d1eb7c8191a1a8b6aad90e1449-mathgpt', className: 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100' },
 ];
 
 const PERFORMANCE = [
@@ -62,7 +55,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: 'Generate slogans.',
-    body: 'Each theorem is summarized into a concise natural-language description ("slogan") by DeepSeek V3, converting formal LaTeX notation into searchable English text.',
+    body: 'Each theorem is summarized into a concise natural-language description ("slogan") by DeepSeek V3 to convert formal LaTeX notation into searchable text.',
   },
   {
     title: 'Embed and index.',
@@ -78,7 +71,7 @@ const STATS = [
   { value: '9M+',  label: 'Theorems indexed' },
   { value: '7',    label: 'Sources' },
   { value: '70%',  label: 'More accurate than LLM search' },
-  { value: '~5s',  label: 'Query latency' },
+  { value: '<5s',  label: 'Query latency' },
 ];
 
 export default function OverviewPage() {
@@ -89,7 +82,7 @@ export default function OverviewPage() {
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-100 px-6 py-3.5">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Image src="/math-ai-logo.jpg" alt="Math AI Lab" width={26} height={26} className="rounded-lg" />
+            <Image src="/math-ai-logo.jpg" alt="Math AI Lab" width={26} height={26} className="rounded" />
             <span className="font-bold text-slate-900">
               Theorem<span className="text-brand">Search</span>
             </span>
@@ -99,7 +92,7 @@ export default function OverviewPage() {
               API
             </Link>
             <Link href="/search"
-              className="px-4 py-1.5 bg-brand text-white rounded-lg text-xs font-bold hover:bg-brand/90 transition-colors">
+              className="px-4 py-1.5 bg-brand text-white rounded text-xs font-bold hover:bg-brand/90 transition-colors">
               Search →
             </Link>
           </nav>
@@ -115,7 +108,7 @@ export default function OverviewPage() {
             <span className="text-brand">mathematical theorems</span>
           </h1>
           <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
-            Describe a result in natural language — TheoremSearch finds it across arXiv, the Stacks Project, and five other sources. <strong className="text-slate-700">70% more accurate than LLM search.</strong>
+            Describe a result in natural language, and TheoremSearch finds it across arXiv, the Stacks Project, and more. <strong className="text-slate-700">70% more accurate than LLM search.</strong>
           </p>
 
           <p className="text-sm text-slate-400">
@@ -130,22 +123,13 @@ export default function OverviewPage() {
             ))}
           </p>
 
-          <div className="flex flex-wrap justify-center gap-2">
-            {BADGES.map(b => (
-              <a key={b.label} href={b.href} target="_blank" rel="noopener noreferrer"
-                className={`px-3 py-1 text-[11px] font-semibold rounded-full border transition-colors ${b.className}`}>
-                {b.label}
-              </a>
-            ))}
-          </div>
-
           <div className="flex items-center justify-center gap-3 pt-2">
             <Link href="/search"
-              className="px-7 py-2.5 bg-brand text-white rounded-xl font-semibold text-sm hover:bg-brand/90 transition-colors shadow-sm shadow-brand/20">
+              className="px-7 py-2.5 bg-brand text-white rounded-md font-semibold text-sm hover:bg-brand/90 transition-colors">
               Try TheoremSearch
             </Link>
             <a href="https://arxiv.org/abs/2602.05216" target="_blank" rel="noopener noreferrer"
-              className="px-7 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-50 transition-colors">
+              className="px-7 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-md font-semibold text-sm hover:bg-slate-50 transition-colors">
               Read the paper →
             </a>
           </div>
@@ -158,7 +142,7 @@ export default function OverviewPage() {
             alt="TheoremSearch screenshot"
             width={1200}
             height={800}
-            className="w-full rounded-2xl border border-slate-200 shadow-xl"
+            className="w-full rounded-lg border border-slate-200"
             loading="eager"
           />
         </div>
@@ -179,21 +163,21 @@ export default function OverviewPage() {
 
           {/* Motivation */}
           <section className="space-y-4">
-            <SectionHeading>Why TheoremSearch?</SectionHeading>
+            <SectionHeading>Motivation</SectionHeading>
             <p className="text-slate-600 leading-relaxed">
               Mathematical knowledge is scattered across millions of papers. Important results hide as lemmas in obscure sources, and existing search tools only operate at the document level.
             </p>
             <p className="text-slate-600 leading-relaxed">
-              <strong>For mathematicians</strong>, the recent AI &ldquo;breakthroughs&rdquo; on{' '}
+              <strong>For mathematicians</strong>, many of the recent AI breakthroughs on{' '}
               <a href="https://www.erdosproblems.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Erdős problems</a>{' '}
-              illustrate this: most turned out to be rediscoveries of results already in the literature. As{' '}
+              turned out to be rediscoveries of results already in the literature. As{' '}
               <a href="https://terrytao.wordpress.com/2025/11/05/mathematical-exploration-and-discovery-at-scale/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Tao observed</a>,
               many &ldquo;open&rdquo; problems are open through obscurity rather than difficulty.{' '}
               <a href="https://arxiv.org/abs/2602.10177" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">DeepMind&rsquo;s Aletheia</a>{' '}
-              confirmed this: most of its correct solutions were identifications of existing literature.
+              also confirms this: most of its correct solutions were identifications of existing literature.
             </p>
             <p className="text-slate-600 leading-relaxed">
-              <strong>For AI agents</strong>, the bottleneck is the same. Without the relevant literature, LLMs fabricate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
+              <strong>For AI agents</strong>, the bottleneck is the same. Without granular access to relevant literature, LLMs fabricate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
             </p>
           </section>
 
@@ -216,11 +200,11 @@ export default function OverviewPage() {
 
           {/* Performance + Data Sources */}
           <section className="space-y-5">
-            <SectionHeading>Performance &amp; Coverage</SectionHeading>
+            <SectionHeading>Overview</SectionHeading>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Retrieval Performance (Hit@10)</h3>
-                <div className="overflow-hidden rounded-xl border border-slate-200">
+                <div className="overflow-hidden rounded-md border border-slate-200">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
@@ -247,7 +231,7 @@ export default function OverviewPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Data Sources</h3>
-                <div className="overflow-hidden rounded-xl border border-slate-200">
+                <div className="overflow-hidden rounded-md border border-slate-200">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
@@ -292,7 +276,7 @@ export default function OverviewPage() {
               <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[13px] font-mono text-slate-700">theorem_search</code>{' '}
               tool.
             </p>
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-md px-4 py-3">
               <span className="text-[10px] font-bold tracking-widest text-slate-400 shrink-0">ENDPOINT</span>
               <code className="text-sm font-mono text-brand">https://api.theoremsearch.com/mcp</code>
             </div>
@@ -312,7 +296,7 @@ export default function OverviewPage() {
             <a href="https://escience.washington.edu/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">UW eScience Institute</a>{' '}
             for supporting this project, and{' '}
             <a href="https://nebius.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Nebius</a>{' '}
-            for inference infrastructure — our demo uses{' '}
+            for inference infrastructure. Our tool uses{' '}
             <a href="https://tokenfactory.nebius.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Nebius Token Factory</a>{' '}
             with{' '}
             <a href="https://tokenfactory.nebius.com/models?search=emb&model-id=Qwen/Qwen3-Embedding-8B" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Qwen3-Embedding-8B</a>{' '}
