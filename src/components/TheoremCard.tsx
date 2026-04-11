@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import { Theorem } from '../data/mockTheorems';
 import { Filters } from './FilterPanel';
-import { ThumbsUp, ThumbsDown, User, BookOpen } from 'lucide-react';
-import { motion } from 'motion/react';
+import { ThumbsUp, ThumbsDown, User, BookOpen, Flag } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { MathJax } from 'better-react-mathjax';
-import { cleanLatexForDisplay, cleanTheoremName } from '../lib/latexClean';
+import { cleanLatexForDisplay, cleanTheoremName, cleanAuthors } from '../lib/latexClean';
 
 interface TheoremCardProps {
   theorem: Theorem;
@@ -18,9 +18,47 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
   const [showSlogan, setShowSlogan] = useState(true);
   const [showLatex, setShowLatex] = useState(false);
   const [vote, setVote] = useState<1 | -1 | null>(null);
+  const [showReport, setShowReport] = useState(false);
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [otherText, setOtherText] = useState('');
+  const [reported, setReported] = useState(false);
 
   const cleanedBody = cleanLatexForDisplay(theorem.theorem_body);
   const displayName = cleanTheoremName(theorem.theorem_name);
+
+  const REPORT_REASONS = [
+    "Slogan and precise statement don't align",
+    'LaTeX is malformed',
+    'Slogan is not descriptive',
+    'Incorrect theorem type',
+    'Other',
+  ];
+
+  const toggleReason = (reason: string) =>
+    setSelectedReasons(prev =>
+      prev.includes(reason) ? prev.filter(r => r !== reason) : [...prev, reason]
+    );
+
+  const submitReport = async () => {
+    if (selectedReasons.length === 0 || reported) return;
+    setReported(true);
+    setShowReport(false);
+    try {
+      await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slogan_id: theorem.slogan_id,
+          reasons: selectedReasons,
+          other_note: selectedReasons.includes('Other') ? otherText.trim() : null,
+          query: activeQuery,
+          url: theorem.link,
+        }),
+      });
+    } catch {
+      // fire-and-forget
+    }
+  };
 
   const submitFeedback = async (v: 1 | -1) => {
     if (vote !== null) return;
@@ -67,7 +105,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
             {theorem.authors.length > 0 && (
               <div className="flex items-center gap-1">
                 <User size={10} />
-                <span className="truncate max-w-35">{theorem.authors.join(', ')}</span>
+                <span className="truncate max-w-35">{cleanAuthors(theorem.authors).join(', ')}</span>
               </div>
             )}
             <div className="flex items-center gap-1">
@@ -123,7 +161,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
 
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
-          {/* Feedback */}
+          {/* Feedback & Report */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => submitFeedback(1)}
@@ -153,9 +191,83 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
             >
               <ThumbsDown size={14} />
             </button>
+            <button
+              onClick={() => !reported && setShowReport(v => !v)}
+              disabled={reported}
+              title={reported ? 'Reported' : 'Report an issue'}
+              className={`p-1.5 transition-colors ${
+                reported
+                  ? 'text-orange-400 cursor-default'
+                  : showReport
+                  ? 'text-orange-400'
+                  : 'text-slate-400 hover:text-orange-400'
+              }`}
+            >
+              <Flag size={14} />
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Report panel */}
+      <AnimatePresence>
+        {showReport && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden border-b border-slate-100"
+          >
+            <div className="px-4 py-3 bg-orange-50/50 space-y-2">
+              <p className="text-[10px] font-bold tracking-widest text-slate-400">REPORT AN ISSUE</p>
+              <div className="space-y-1.5">
+                {REPORT_REASONS.map(reason => (
+                  <div key={reason}>
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={selectedReasons.includes(reason)}
+                        onChange={() => toggleReason(reason)}
+                        className="accent-orange-400 w-3 h-3"
+                      />
+                      <span className="text-xs text-slate-600 group-hover:text-slate-800 transition-colors">
+                        {reason}
+                      </span>
+                    </label>
+                    {reason === 'Other' && selectedReasons.includes('Other') && (
+                      <input
+                        type="text"
+                        value={otherText}
+                        onChange={e => setOtherText(e.target.value)}
+                        placeholder="Please describe the issue…"
+                        maxLength={500}
+                        autoFocus
+                        className="mt-1.5 ml-5 w-[calc(100%-1.25rem)] border border-slate-200 rounded-md px-2.5 py-1 text-xs text-slate-700 focus:outline-none focus:border-orange-300 bg-white"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-1">
+                <button
+                  onClick={() => { setShowReport(false); setSelectedReasons([]); setOtherText(''); }}
+                  className="px-2.5 py-1 text-[10px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitReport}
+                  disabled={selectedReasons.length === 0}
+                  className="px-2.5 py-1 text-[10px] font-bold bg-orange-400 text-white rounded-md hover:bg-orange-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Submit report
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Content */}
       <motion.div

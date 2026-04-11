@@ -3,6 +3,7 @@
 import React, { useState, useDeferredValue } from 'react';
 import { X, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { cleanAuthors } from '../lib/latexClean';
 
 export interface Filters {
   sources: string[];
@@ -396,7 +397,7 @@ export default function FilterPanel({
 
                     {/* Middle: Authors spanning full height */}
                     <AuthorSelect
-                      options={availableAuthors}
+                      options={cleanAuthors(availableAuthors)}
                       selected={filters.authors}
                       onChange={authors => setFilters({ ...filters, authors })}
                     />

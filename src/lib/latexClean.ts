@@ -46,6 +46,17 @@ export function cleanTheoremName(name: string): string {
   return result.replace(/[\s,;:.–—]+$/, '').trim();
 }
 
+/**
+ * Cleans a raw authors array for display.
+ * - Strips leading non-letter characters (e.g. ". A. F. M. ter Elst" → "A. F. M. ter Elst")
+ * - Drops entries shorter than 3 characters after cleaning (e.g. ".")
+ */
+export function cleanAuthors(authors: string[]): string[] {
+  return authors
+    .map(a => a.replace(/^[^A-Za-z]+/, '').trim())
+    .filter(a => a.length >= 3);
+}
+
 export function cleanLatexForDisplay(text: string): string {
   if (!text) return text;
 

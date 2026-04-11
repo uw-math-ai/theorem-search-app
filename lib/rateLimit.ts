@@ -4,7 +4,8 @@ interface WindowEntry {
 }
 
 const windows = new Map<string, WindowEntry>();
-const votedPairs = new Map<string, number>(); // `${ip}:${sloganId}` → timestamp
+const votedPairs    = new Map<string, number>(); // `${ip}:${sloganId}` → timestamp
+const reportedPairs = new Map<string, number>(); // `${ip}:${sloganId}` → timestamp
 let callCount = 0;
 
 function cleanup() {
@@ -13,9 +14,8 @@ function cleanup() {
     if (now > v.resetAt) windows.delete(k);
   }
   const cutoff = now - 24 * 60 * 60 * 1000;
-  for (const [k, ts] of votedPairs) {
-    if (ts < cutoff) votedPairs.delete(k);
-  }
+  for (const [k, ts] of votedPairs)    if (ts < cutoff) votedPairs.delete(k);
+  for (const [k, ts] of reportedPairs) if (ts < cutoff) reportedPairs.delete(k);
 }
 
 /** Returns true if the request is within the allowed rate, false if it should be rejected. */
@@ -39,4 +39,13 @@ export function hasVoted(ip: string, sloganId: string): boolean {
 
 export function recordVote(ip: string, sloganId: string): void {
   votedPairs.set(`${ip}:${sloganId}`, Date.now());
+}
+
+/** Returns true if this IP has already reported this slogan within the last 24 hours. */
+export function hasReported(ip: string, sloganId: string): boolean {
+  return reportedPairs.has(`${ip}:${sloganId}`);
+}
+
+export function recordReport(ip: string, sloganId: string): void {
+  reportedPairs.set(`${ip}:${sloganId}`, Date.now());
 }
