@@ -219,6 +219,7 @@ export default function App() {
                 className="w-full pl-10 pr-32 py-3 bg-white border border-slate-200 rounded-2xl focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-base shadow-sm"
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
+                maxLength={1000}
                 onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
               />
               <div className="absolute inset-y-1.5 right-1.5 flex items-center gap-1">

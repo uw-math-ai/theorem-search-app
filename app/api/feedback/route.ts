@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { checkRateLimit, hasVoted, recordVote } from '@/lib/rateLimit';
+import { sanitizeText } from '@/lib/sanitize';
 
 function getIp(req: NextRequest): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -44,14 +45,14 @@ export async function POST(req: NextRequest) {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
       [
         vote,
-        query.trim(),
-        typeof url === 'string' ? url.slice(0, 2000) : '',
-        typeof theorem_name === 'string' ? theorem_name.slice(0, 500) : '',
-        Array.isArray(authors) ? authors.join(', ').slice(0, 1000) : null,
+        sanitizeText(query, 1000),
+        sanitizeText(url, 2000) ?? '',
+        sanitizeText(theorem_name, 500) ?? '',
+        Array.isArray(authors) ? sanitizeText(authors.join(', '), 1000) : null,
         (Array.isArray(filters.types) ? filters.types : []).join(', '),
         (Array.isArray(filters.categories) ? filters.categories : []).join(', '),
         sources.join(', '),
-        typeof filters.paperFilter === 'string' ? filters.paperFilter.slice(0, 500) : '',
+        sanitizeText(filters.paperFilter, 500) ?? '',
         `${filters.yearMin ?? ''}–${filters.yearMax ?? ''}`,
         `${filters.citationMin ?? 0}–${filters.citationMax ?? ''}`,
         0.0,

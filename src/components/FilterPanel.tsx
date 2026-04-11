@@ -389,6 +389,7 @@ export default function FilterPanel({
                           value={filters.paperFilter}
                           onChange={e => setFilters({ ...filters, paperFilter: e.target.value })}
                           placeholder="e.g. 2401.12345, Finite Hilbert stability"
+                          maxLength={500}
                           className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-brand bg-white"
                         />
                         <p className="mt-1 text-[10px] text-slate-400">Comma-separated arXiv IDs or title keywords</p>

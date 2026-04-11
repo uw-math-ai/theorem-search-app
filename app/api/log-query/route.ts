@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { sanitizeText } from '@/lib/sanitize';
 
 function getIp(req: NextRequest): string {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
       types: (Array.isArray(filters.types) ? filters.types : []).join(', '),
       tags: (Array.isArray(filters.categories) ? filters.categories : []).join(', '),
       sources: sources.join(', '),
-      paper_filter: typeof filters.paperFilter === 'string' ? filters.paperFilter : '',
+      paper_filter: sanitizeText(filters.paperFilter, 500) ?? '',
       year_range: `${filters.yearMin ?? ''}–${filters.yearMax ?? ''}`,
       citation_range: `${filters.citationMin ?? 0}–${filters.citationMax ?? ''}`,
       include_unknown_citations: String(filters.includeUnknownCitations ?? true),
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     const pool = await getPool();
     await pool.query(
       'INSERT INTO queries (query, sources, filters) VALUES ($1, $2, $3)',
-      [query.trim(), sources, filtersJson]
+      [sanitizeText(query, 1000), sources, filtersJson]
     );
 
     return NextResponse.json({ ok: true });
