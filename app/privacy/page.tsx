@@ -55,7 +55,7 @@ export default function PrivacyPage() {
       <footer className="border-t border-slate-200 py-6 mt-8">
         <div className="max-w-2xl mx-auto px-6 flex items-center justify-between text-[11px] text-slate-400">
           <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
-          <Link href="/" className="hover:text-brand transition-colors">← Back to search</Link>
+          <Link href="/search" className="hover:text-brand transition-colors">← Back to search</Link>
         </div>
       </footer>
     </div>

@@ -78,7 +78,7 @@ export default function ImprovePage() {
         </section>
 
         <div className="pt-2">
-          <Link href="/"
+          <Link href="/search"
             className="inline-block px-6 py-2.5 bg-brand text-white rounded-xl font-semibold text-sm hover:bg-brand/90 transition-colors shadow-sm shadow-brand/20">
             Start searching
           </Link>
@@ -88,7 +88,7 @@ export default function ImprovePage() {
       <footer className="border-t border-slate-200 py-6 mt-8">
         <div className="max-w-2xl mx-auto px-6 flex items-center justify-between text-[11px] text-slate-400">
           <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
-          <Link href="/" className="hover:text-brand transition-colors">← Back to search</Link>
+          <Link href="/search" className="hover:text-brand transition-colors">← Back to search</Link>
         </div>
       </footer>
     </div>
