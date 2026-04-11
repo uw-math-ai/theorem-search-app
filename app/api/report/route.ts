@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
-// import { callLambda } from '@/lib/lambdaClient'; // TODO: re-enable when using Lambda
 import { checkRateLimit, hasReported, recordReport } from '@/lib/rateLimit';
 import { sanitizeText } from '@/lib/sanitize';
 
