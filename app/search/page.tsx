@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search, Filter, Info, Loader2 } from 'lucide-react';
@@ -178,6 +178,20 @@ export default function App() {
   const citationMax = metadata?.citationMax ?? 10_000;
   const activeCount = countActiveFilters(filters, yearMin, yearMax, citationMax);
 
+  // Keep input right-padding in sync with the actual button group width
+  const searchButtonGroupRef = useRef<HTMLDivElement>(null);
+  const [inputPaddingRight, setInputPaddingRight] = useState(128);
+  useEffect(() => {
+    const update = () => {
+      if (searchButtonGroupRef.current) {
+        setInputPaddingRight(searchButtonGroupRef.current.offsetWidth + 8);
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [activeCount]);
+
   // Pagination
   const totalPages = results ? Math.ceil(results.length / resultsPerPage) : 0;
   const paginatedResults = results?.slice(
@@ -215,13 +229,14 @@ export default function App() {
               <input
                 type="text"
                 placeholder="Describe a theorem (e.g. The Jones polynomial is link invariant)"
-                className="w-full pl-10 pr-32 py-3 bg-white border border-slate-200 rounded-2xl focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-base shadow-sm"
+                className="w-full pl-10 py-3 bg-white border border-slate-200 rounded-2xl focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-base shadow-sm"
+                style={{ paddingRight: inputPaddingRight }}
                 value={searchInput}
                 onChange={e => setSearchInput(e.target.value)}
                 maxLength={1000}
                 onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
               />
-              <div className="absolute inset-y-1.5 right-1.5 flex items-center gap-1">
+              <div ref={searchButtonGroupRef} className="absolute inset-y-1.5 right-1.5 flex items-center gap-1">
                 <button
                   onClick={() => setShowFilters(v => !v)}
                   className={`px-3 py-1.5 border rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-colors ${
