@@ -406,7 +406,7 @@ export default function App() {
           <div>
             <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">Research</h4>
             <ul className="space-y-2 text-sm text-slate-600">
-              <li><a href="/overview" className="hover:text-brand transition-colors">Overview</a></li>
+              <li><a href="/" className="hover:text-brand transition-colors">Overview</a></li>
               <li><a href="https://arxiv.org/abs/2602.05216" className="hover:text-brand transition-colors">Preprint</a></li>
             </ul>
           </div>
