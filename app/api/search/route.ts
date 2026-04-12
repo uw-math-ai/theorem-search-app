@@ -172,7 +172,11 @@ export async function POST(req: NextRequest) {
 
     if (!sources.length) return NextResponse.json({ results: [] });
 
-    const vecStr = vecToSql(await embedQuery(query.trim()));
+    const trimmedQuery = query.trim();
+    const embedInput = trimmedQuery.split(/\s+/).length < 5
+      ? `${trimmedQuery} ${trimmedQuery}`
+      : trimmedQuery;
+    const vecStr = vecToSql(await embedQuery(embedInput));
 
     const client = await pool.connect();
     try {
