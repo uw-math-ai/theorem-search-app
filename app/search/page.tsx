@@ -79,6 +79,7 @@ export default function App() {
   const [activeQuery, setActiveQuery] = useState('');
   const [filters, setFilters] = useState<Filters>(makeDefaultFilters());
   const [showFilters, setShowFilters] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
 
   const [results, setResults] = useState<Theorem[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -209,14 +210,61 @@ export default function App() {
               </h1>
             </Link>
 
-            <div className="flex items-center gap-1.5 w-full">
+            {/* Mobile layout */}
+            <div className="flex flex-col gap-1.5 w-full md:hidden">
+              <div className="relative w-full">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <Search className="text-slate-400" size={14} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Describe a result (e.g. The Jones polynomial is link invariant)"
+                  className={`w-full pl-9 py-3 bg-white border border-slate-200 rounded focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-xs ${inputFocused ? 'pr-10' : 'pr-3'}`}
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  maxLength={1000}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
+                />
+                {inputFocused && (
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-1.5">
+                    <button
+                      onMouseDown={e => { e.preventDefault(); handleSearch(); }}
+                      disabled={!searchInput.trim() || isSearching}
+                      className="p-1.5 bg-brand text-white rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Search size={13} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setShowFilters(v => !v)}
+                className={`self-start p-3 border rounded flex items-center gap-1 text-xs font-semibold transition-colors ${
+                  showFilters || activeCount > 0
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-white text-slate-600 border-slate-200'
+                }`}
+              >
+                <Filter size={14} />
+                {activeCount > 0 && (
+                  <span className="bg-white/30 rounded-full px-1.5 py-0.5 text-[10px] leading-none">
+                    {activeCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Desktop layout */}
+            <div className="hidden md:flex items-center gap-1.5 w-full">
               <div className="relative flex-1 min-w-0">
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                   <Search className="text-slate-400" size={18} />
                 </div>
                 <input
                   type="text"
-                  placeholder="Describe a theorem (e.g. The Jones polynomial is link invariant)"
+                  placeholder="Describe a result (e.g. The Jones polynomial is link invariant)"
                   className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-base"
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
@@ -233,7 +281,7 @@ export default function App() {
                 }`}
               >
                 <Filter size={14} />
-                <span className="hidden sm:inline">Filters</span>
+                Filters
                 {activeCount > 0 && (
                   <span className="bg-white/30 rounded-full px-1.5 py-0.5 text-[10px] leading-none">
                     {activeCount}
@@ -392,7 +440,7 @@ export default function App() {
           <div>
             <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">Research</h4>
             <ul className="space-y-2 text-sm text-slate-600">
-              <li><a href="/" className="hover:text-brand transition-colors">Overview</a></li>
+              <li><Link href="/" className="hover:text-brand transition-colors">Overview</Link></li>
               <li><a href="https://arxiv.org/abs/2602.05216" className="hover:text-brand transition-colors">Preprint</a></li>
             </ul>
           </div>
