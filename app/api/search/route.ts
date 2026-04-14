@@ -50,78 +50,85 @@ async function fetchCandidates(
   sources: string[],
   filters: SearchFilters
 ): Promise<CandidateRow[]> {
-  await client.query(`SET hnsw.ef_search = ${Math.max(80, topK * 4)}`);
-  await client.query(`SET hnsw.iterative_scan = 'relaxed_order'`);
+  // Use an explicit transaction so SET LOCAL applies to all queries within it,
+  // matching the psycopg2 implicit-transaction behaviour in db.py.
+  await client.query('BEGIN');
+  await client.query(`SET LOCAL hnsw.ef_search = ${Math.max(80, topK * 4)}`);
+  await client.query(`SET LOCAL hnsw.iterative_scan = 'relaxed_order'`);
 
   const all: CandidateRow[] = [];
 
-  for (const source of sources) {
-    // Positional params: $1=source, $2=vec_ann, $3=limit, then filter params, then $N=vec_rerank
-    const params: unknown[] = [source, vecStr, topK * PER_SOURCE_MULTIPLIER];
-    const extra: string[] = [];
+  try {
+    for (const source of sources) {
+      // Positional params: $1=source, $2=vec_ann, $3=limit, then filter params, then $N=vec_rerank
+      const params: unknown[] = [source, vecStr, topK * PER_SOURCE_MULTIPLIER];
+      const extra: string[] = [];
 
-    const p = (val: unknown) => { params.push(val); return `$${params.length}`; };
+      const p = (val: unknown) => { params.push(val); return `$${params.length}`; };
 
-    if (filters.types?.length)      extra.push(`theorem_type = ANY(${p(filters.types)})`);
-    if (filters.authors?.length)    extra.push(`authors && ${p(filters.authors)}`);
-    if (filters.categories?.length) extra.push(`primary_category = ANY(${p(filters.categories)})`);
+      if (filters.types?.length)      extra.push(`theorem_type = ANY(${p(filters.types)})`);
+      if (filters.authors?.length)    extra.push(`authors && ${p(filters.authors)}`);
+      if (filters.categories?.length) extra.push(`primary_category = ANY(${p(filters.categories)})`);
 
-    if (filters.publicationStatus?.length) {
-      const clauses: string[] = [];
-      if (filters.publicationStatus.includes('Published')) clauses.push('journal_published = true');
-      if (filters.publicationStatus.includes('Preprint'))  clauses.push('journal_published = false');
-      if (clauses.length) extra.push(`(${clauses.join(' OR ')})`);
-    }
-
-    if (filters.yearMin != null)    extra.push(`year >= ${p(filters.yearMin)}`);
-    if (filters.yearMax != null)    extra.push(`year <= ${p(filters.yearMax)}`);
-
-    // Citation range (arXiv only; safe to apply to others — they'll just have NULL)
-    const hasCitationFilter =
-      (filters.citationMin != null && filters.citationMin > 0) ||
-      filters.citationMax != null;
-    if (hasCitationFilter) {
-      const low  = filters.citationMin ?? 0;
-      const high = filters.citationMax ?? 2_000_000;
-      if (filters.includeUnknownCitations !== false) {
-        extra.push(`(citations BETWEEN ${p(low)} AND ${p(high)} OR citations IS NULL)`);
-      } else {
-        extra.push(`citations BETWEEN ${p(low)} AND ${p(high)}`);
+      if (filters.publicationStatus?.length) {
+        const clauses: string[] = [];
+        if (filters.publicationStatus.includes('Published')) clauses.push('(journal_published = true OR journal_published IS NULL)');
+        if (filters.publicationStatus.includes('Preprint'))  clauses.push('(journal_published = false OR journal_published IS NULL)');
+        if (clauses.length) extra.push(`(${clauses.join(' OR ')})`);
       }
+
+      if (filters.yearMin != null)    extra.push(`(year >= ${p(filters.yearMin)} OR year IS NULL)`);
+      if (filters.yearMax != null)    extra.push(`(year <= ${p(filters.yearMax)} OR year IS NULL)`);
+
+      // Citation range (arXiv only; safe to apply to others — they'll just have NULL)
+      const hasCitationFilter =
+        (filters.citationMin != null && filters.citationMin > 0) ||
+        filters.citationMax != null;
+      if (hasCitationFilter) {
+        const low  = filters.citationMin ?? 0;
+        const high = filters.citationMax ?? 2_000_000;
+        if (filters.includeUnknownCitations !== false) {
+          extra.push(`(citations BETWEEN ${p(low)} AND ${p(high)} OR citations IS NULL)`);
+        } else {
+          extra.push(`citations BETWEEN ${p(low)} AND ${p(high)}`);
+        }
+      }
+
+      // Paper / arXiv ID filter
+      if (filters.paperFilter?.trim()) {
+        const { ids, titles } = parsePaperFilter(filters.paperFilter);
+        const orClauses: string[] = [];
+        if (ids.length)    orClauses.push(`paper_id LIKE ANY(${p(ids.map(id => id + '%'))})`);
+        if (titles.length) orClauses.push(`title ILIKE ANY(${p(titles.map(t => '%' + t + '%'))})`);
+        if (orClauses.length) extra.push(`(${orClauses.join(' OR ')})`);
+      }
+
+      const pRerank = p(vecStr); // rerank vec always last
+      const extraWhere = extra.length ? ' AND ' + extra.join(' AND ') : '';
+
+      const sql = `
+        WITH ann AS (
+          SELECT slogan_id, citations, embedding
+          FROM theorem_search_qwen8b
+          WHERE source = $1${extraWhere}
+          ORDER BY
+            (binary_quantize(embedding)::bit(4096))
+            <~>
+            binary_quantize($2::vector(4096))::bit(4096)
+          LIMIT $3
+        )
+        SELECT
+          slogan_id,
+          (1.0 - (embedding <=> ${pRerank}::vector(4096))) AS similarity,
+          (1.0 - (embedding <=> ${pRerank}::vector(4096))) AS score
+        FROM ann
+      `;
+
+      const { rows } = await client.query<CandidateRow>(sql, params);
+      all.push(...rows);
     }
-
-    // Paper / arXiv ID filter
-    if (filters.paperFilter?.trim()) {
-      const { ids, titles } = parsePaperFilter(filters.paperFilter);
-      const orClauses: string[] = [];
-      if (ids.length)    orClauses.push(`paper_id LIKE ANY(${p(ids.map(id => id + '%'))})`);
-      if (titles.length) orClauses.push(`title ILIKE ANY(${p(titles.map(t => '%' + t + '%'))})`);
-      if (orClauses.length) extra.push(`(${orClauses.join(' OR ')})`);
-    }
-
-    const pRerank = p(vecStr); // rerank vec always last
-    const extraWhere = extra.length ? ' AND ' + extra.join(' AND ') : '';
-
-    const sql = `
-      WITH ann AS (
-        SELECT slogan_id, citations, embedding
-        FROM theorem_search_qwen8b
-        WHERE source = $1${extraWhere}
-        ORDER BY
-          (binary_quantize(embedding)::bit(4096))
-          <~>
-          binary_quantize($2::vector(4096))::bit(4096)
-        LIMIT $3
-      )
-      SELECT
-        slogan_id,
-        (1.0 - (embedding <=> ${pRerank}::vector(4096))) AS similarity,
-        (1.0 - (embedding <=> ${pRerank}::vector(4096))) AS score
-      FROM ann
-    `;
-
-    const { rows } = await client.query<CandidateRow>(sql, params);
-    all.push(...rows);
+  } finally {
+    await client.query('COMMIT');
   }
 
   all.sort((a, b) => Number(b.score) - Number(a.score));

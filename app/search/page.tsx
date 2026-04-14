@@ -104,6 +104,7 @@ export default function App() {
   // Run search whenever activeQuery or filters change
   const doSearch = useCallback(async (query: string, f: Filters) => {
     if (!query.trim()) return;
+    if (!f.sources.length) { setResults(null); return; }
     setIsSearching(true);
     setSearchError(null);
     setCurrentPage(1);
@@ -321,6 +322,12 @@ export default function App() {
         <section className="max-w-5xl mx-auto">
 
           {/* States */}
+          {activeQuery && !filters.sources.length && !isSearching && (
+            <div className="text-center py-24">
+              <p className="text-slate-400 text-sm">Select at least one source to search over.</p>
+            </div>
+          )}
+
           {!activeQuery && !isSearching && (
             <div className="text-center py-24">
               <p className="text-slate-400 text-sm">
