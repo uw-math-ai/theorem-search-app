@@ -12,8 +12,7 @@
 
 <table>
 <tr>
-<td width="50%"><img src="https://github.com/user-attachments/assets/e9dd0a54-432e-4083-ba45-38a18885bd4d" width="100%" /></td>
-<td width="50%"><img src="https://github.com/user-attachments/assets/089438a8-f679-4ef1-84da-bfade8d60072" width="100%" /></td>
+<td width="100%"><img src="public/theorem-search-screenshot.png" width="100%" /></td>
 </tr>
 </table>
 
@@ -68,9 +67,9 @@ Paper-level = retrieval of the correct paper containing the theorem</small></p>
 
 Mathematical knowledge is scattered across millions of papers. Important results hide as lemmas in obscure sources, and existing search tools only operate at the document level.
 
-**For mathematicians**, important results hide as lemmas in obscure papers, and existing tools only search at the document level. The recent AI "breakthroughs" on [Erdos problems](https://www.erdosproblems.com/) illustrate this: most turned out to be rediscoveries of results already in the literature. As [Tao observed](https://terrytao.wordpress.com/2025/11/05/mathematical-exploration-and-discovery-at-scale/), many "open" problems are open through obscurity, not difficulty. [DeepMind's Aletheia](https://arxiv.org/abs/2602.10177) confirmed this — most of its correct solutions were identifications of existing literature.
+**For mathematicians**, important results hide as lemmas in obscure papers, and existing tools only search at the document level. The recent AI "breakthroughs" on [Erdős problems](https://www.erdosproblems.com/) turned out to be rediscoveries of results already in the literature. As [Tao observed](https://terrytao.wordpress.com/2025/11/05/mathematical-exploration-and-discovery-at-scale/), many problems are open through obscurity rather than difficulty.. [DeepMind's Aletheia](https://arxiv.org/abs/2602.10177) also confirms this: most of its correct solutions were identifications of existing literature.
 
-**For AI agents**, the bottleneck is the same. Without the relevant literature, LLMs confabulate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
+**For AI agents**, the bottleneck is the same. Without granular access to relevant literature, LLMs fabricate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
 
 ## How It Works
 
@@ -82,7 +81,9 @@ Mathematical knowledge is scattered across millions of papers. Important results
 
 ## API
 
-TheoremSearch provides a production REST API for semantic theorem search.**Example:**
+TheoremSearch provides a production REST API for semantic theorem search.
+
+ **Example:**
 
 ```bash
 curl https://api.theoremsearch.com/search \
@@ -112,7 +113,7 @@ TheoremSearch is also available as an MCP tool for AI agents with a single tool 
 
 ## Acknowledgements
 
-We thank the [UW eScience Institute](https://escience.washington.edu/) for supporting this project. We thank [Nebius](https://nebius.com/) for providing inference infrastructure — our demo uses [Nebius Token Factory](https://tokenfactory.nebius.com/) for fast, low-cost query embedding with [Qwen3-Embedding-8B](https://tokenfactory.nebius.com/models?search=emb&model-id=Qwen/Qwen3-Embedding-8B).
+We thank the [UW eScience Institute](https://escience.washington.edu/) for supporting this project. We thank [Nebius](https://nebius.com/) for providing inference infrastructure. Our tool uses [Nebius Token Factory](https://tokenfactory.nebius.com/) with [Qwen3-Embedding-8B](https://tokenfactory.nebius.com/models?search=emb&model-id=Qwen/Qwen3-Embedding-8B) for query embedding.
 
 ## Contact
 
