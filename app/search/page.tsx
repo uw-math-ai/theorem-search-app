@@ -183,10 +183,10 @@ export default function App() {
 
   // Pagination
   const totalPages = results ? Math.ceil(results.length / resultsPerPage) : 0;
-  const paginatedResults = results?.slice(
-    (currentPage - 1) * resultsPerPage,
-    currentPage * resultsPerPage
-  ) ?? [];
+  const paginatedResults = useMemo(
+    () => results?.slice((currentPage - 1) * resultsPerPage, currentPage * resultsPerPage) ?? [],
+    [results, currentPage, resultsPerPage]
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/30">

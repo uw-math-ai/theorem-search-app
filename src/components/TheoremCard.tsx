@@ -14,7 +14,7 @@ interface TheoremCardProps {
   filters: Filters;
 }
 
-export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, filters }) => {
+export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, activeQuery, filters }) => {
   const [showSlogan, setShowSlogan] = useState(true);
   const [showLatex, setShowLatex] = useState(false);
   const [vote, setVote] = useState<1 | -1 | null>(null);
@@ -308,4 +308,4 @@ export const TheoremCard: React.FC<TheoremCardProps> = ({ theorem, activeQuery, 
       </motion.div>
     </motion.div>
   );
-};
+});
