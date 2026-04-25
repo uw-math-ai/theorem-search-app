@@ -22,6 +22,7 @@ interface SearchFilters {
   citationMax?: number;
   includeUnknownCitations?: boolean;
   paperFilter?: string;
+  searchMode?: 'semantic' | 'rrf';
 }
 
 function parsePaperFilter(raw: string): { ids: string[]; titles: string[] } {
@@ -180,9 +181,12 @@ export async function POST(req: NextRequest) {
     if (!sources.length) return NextResponse.json({ results: [] });
 
     const trimmedQuery = query.trim();
-    const embedInput = trimmedQuery.split(/\s+/).length < 5
-      ? `${trimmedQuery} ${trimmedQuery}`
-      : trimmedQuery;
+    // Normalize: lowercase and strip possessives so "Fermat's" → "Fermat"
+    const normalizedQuery = trimmedQuery
+      .toLowerCase();
+    const embedInput = normalizedQuery.split(/\s+/).length < 5
+      ? `${normalizedQuery} ${normalizedQuery}`
+      : normalizedQuery;
     const vecStr = vecToSql(await embedQuery(embedInput));
 
     const client = await pool.connect();
