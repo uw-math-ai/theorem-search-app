@@ -13,16 +13,32 @@ const client = new OpenAI({
   apiKey: process.env.NEBIUS_API_KEY,
 });
 
-export async function embedQuery(query: string): Promise<number[]> {
-  const hit = global._embedCache!.get(query);
+// Must stay in lockstep with DEFAULT_QUERY_PROMPT in api/models.py.
+// Qwen3-Embedding-8B uses an Instruct/Query template; without it the model
+// produces a generic embedding that ranks corrupted-slogan rows above real
+// theorem statements.
+export const DEFAULT_QUERY_PROMPT =
+  'Instruct: Given an informal description of a mathematical result, ' +
+  'retrieve the formal theorem statement that matches it. The query ' +
+  'describes a specific theorem, lemma, or proposition from a research ' +
+  'paper.\nQuery: ';
+
+export async function embedQuery(
+  query: string,
+  prompt: string | null = null,
+): Promise<number[]> {
+  const effectivePrompt = prompt === null ? DEFAULT_QUERY_PROMPT : prompt;
+  const input = effectivePrompt + query;
+
+  const hit = global._embedCache!.get(input);
   if (hit) return hit;
 
   const res = await client.embeddings.create({
     model: 'Qwen/Qwen3-Embedding-8B',
-    input: query,
+    input,
   });
 
   const vec = res.data[0].embedding;
-  global._embedCache!.set(query, vec);
+  global._embedCache!.set(input, vec);
   return vec;
 }

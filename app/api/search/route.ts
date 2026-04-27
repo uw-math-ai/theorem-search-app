@@ -180,14 +180,7 @@ export async function POST(req: NextRequest) {
 
     if (!sources.length) return NextResponse.json({ results: [] });
 
-    const trimmedQuery = query.trim();
-    // Normalize: lowercase and strip possessives so "Fermat's" → "Fermat"
-    const normalizedQuery = trimmedQuery
-      .toLowerCase();
-    const embedInput = normalizedQuery.split(/\s+/).length < 5
-      ? `${normalizedQuery} ${normalizedQuery}`
-      : normalizedQuery;
-    const vecStr = vecToSql(await embedQuery(embedInput));
+    const vecStr = vecToSql(await embedQuery(query.trim()));
 
     const client = await pool.connect();
     try {
