@@ -18,10 +18,7 @@ const client = new OpenAI({
 // produces a generic embedding that ranks corrupted-slogan rows above real
 // theorem statements.
 export const DEFAULT_QUERY_PROMPT =
-  'Instruct: Given an informal description of a mathematical result, ' +
-  'retrieve the formal theorem statement that matches it. The query ' +
-  'describes a specific theorem, lemma, or proposition from a research ' +
-  'paper.\nQuery: ';
+  'Instruct: Given a math problem, retrieve useful references, such as theorems, lemmas, and definitions, that are useful for solving the given problem.\nQuery: ';
 
 export async function embedQuery(
   query: string,
