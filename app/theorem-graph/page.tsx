@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ReactNode } from 'react';
 
 export const metadata = {
-  title: 'TheoremSearch — Semantic Search for Mathematical Theorems',
+  title: 'TheoremGraph — Mathematical Dependency Graph',
 };
 
 function SectionHeading({ children }: { children: ReactNode }) {
@@ -21,61 +21,60 @@ function CodeBlock({ children }: { children: string }) {
 }
 
 const AUTHORS = [
-  { name: 'Luke Alexander',      href: 'https://www.linkedin.com/in/lukealexanderluke/' },
+  { name: 'Simon Kurgan',        href: 'https://www.linkedin.com/in/simon-kurgan/' },
+  { name: 'Evan Wang',           href: 'https://github.com/aurasoph/' },
   { name: 'Eric Leonen',         href: 'https://github.com/ericleonen' },
   { name: 'Sophie Szeto',        href: 'https://www.linkedin.com/in/sophie-szeto/' },
+  { name: 'Luke Alexander',      href: 'https://www.linkedin.com/in/lukealexanderluke/' },
   { name: 'Artemii Remizov',     href: 'https://www.linkedin.com/in/artemii-remizov-62783631b/' },
-  { name: 'Ignacio Tejeda',      href: 'https://www.ignaciotejeda.com/' },
   { name: 'Jarod Alper',         href: 'https://sites.math.washington.edu//~jarod/' },
   { name: 'Giovanni Inchiostro', href: 'https://sites.math.washington.edu/~ginchios/' },
   { name: 'Vasily Ilin',         href: 'https://vilin97.github.io/' },
 ];
 
-const PERFORMANCE = [
-  { model: 'Google Search', theorem: '—',     paper: '0.378' },
-  { model: 'ChatGPT 5.2',   theorem: '0.180', paper: '—' },
-  { model: 'Gemini 3 Pro',  theorem: '0.252', paper: '—' },
-  { model: 'Ours',          theorem: '0.432', paper: '0.505', highlight: true },
-];
-
-const SOURCES = [
-  { name: 'arXiv',                      count: '9,246,761' },
-  { name: 'ProofWiki',                  count: '23,871' },
-  { name: 'Stacks Project',             count: '12,693' },
-  { name: 'Open Logic Project',         count: '745' },
-  { name: 'CRing Project',              count: '546' },
-  { name: 'Stacks and Moduli',          count: '506' },
-  { name: 'HoTT Book',                  count: '382' },
-  { name: 'An Infinitely Large Napkin', count: '231' },
+const STATS = [
+  { value: '11.7M', label: 'Theorems indexed' },
+  { value: '18.3M', label: 'Dependency edges' },
+  { value: '388k',  label: 'Lean declarations' },
+  { value: '47,952', label: 'Formal-informal matches' },
 ];
 
 const HOW_IT_WORKS = [
   {
-    title: 'Parse theorems.',
-    body: 'We extract over 9 million theorem statements from LaTeX sources across arXiv and seven other sources using a combination of plasTeX, TeX logging, and regex-based parsing.',
+    title: 'Parse informal statements.',
+    body: 'We extract over 11.7 million theorem-like environments from mathematics arXiv papers using a regex-based parser, and recover 18.3 million candidate directed dependency edges. We use deterministic, heuristic, and notation-based parsing methods, and label each edge with the parser type.',
   },
   {
-    title: 'Generate slogans.',
-    body: 'Each theorem is summarized into a concise natural-language description ("slogan") by DeepSeek V3 to convert formal LaTeX notation into searchable text.',
+    title: 'Extract the formal graph.',
+    body: 'LeanGraph extracts typed declaration-level dependencies from Mathlib4 and 25 open-source Lean projects, yielding 388,105 nodes and 11.3 million typed edges across six semantic categories.',
   },
   {
-    title: 'Embed and index.',
-    body: 'Slogans are embedded using Qwen3-Embedding-8B and stored in a PostgreSQL database with pgvector, using an HNSW index with binary quantization for fast approximate nearest-neighbor search.',
+    title: 'Generate slogans and embed.',
+    body: 'Every formal and informal statement we extract is summarized into a concise natural-language slogan by Qwen3-235B and embedded with Qwen3-Embedding-8B into a shared semantic space.',
   },
   {
-    title: 'Retrieve.',
-    body: 'User queries are embedded with the same model. We retrieve the top-k theorems by Hamming distance, then re-rank by cosine similarity.',
+    title: 'Bridging the corpora.',
+    body: 'A cross-modal nearest-neighbor sweep proposes (informal, formal) candidate matches, and a GPT-5.4 judge affirms 47,952 matches above a 0.8 cosine similarity floor.',
   },
 ];
 
-const STATS = [
-  { value: '9M+',  label: 'Theorems indexed' },
-  { value: '7',    label: 'Sources' },
-  { value: '70%',  label: 'More accurate than LLM search' },
-  { value: '<5s',  label: 'Query latency' },
+const EXTRACTORS = [
+  { extractor: 'Deterministic', edges: '5.23M', precision: '98.8%' },
+  { extractor: 'Heuristic',     edges: '6.47M', precision: '76.6%' },
+  { extractor: 'Notation',      edges: '7.88M', precision: '42.7%' },
+  { extractor: 'Any (total)',   edges: '18.3M', precision: '68.1%' },
 ];
 
-export default function OverviewPage() {
+const EDGE_TYPES = [
+  { type: 'proof',   description: 'Used inside a theorem proof term' },
+  { type: 'sig',     description: 'Appears in a type signature' },
+  { type: 'def',     description: 'Used in a non-Prop definition body' },
+  { type: 'field',   description: 'Referenced in a structure field type' },
+  { type: 'extends', description: 'Structure or class inheritance' },
+  { type: 'docref',  description: 'Backtick reference in a docstring' },
+];
+
+export default function TheoremGraphPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
 
@@ -89,9 +88,7 @@ export default function OverviewPage() {
             </span>
           </Link>
           <nav className="flex items-center gap-5">
-            <Link href="/theorem-graph" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-              TheoremGraph
-            </Link>
+            <span className="text-sm font-semibold text-brand">TheoremGraph</span>
             <Link href="/docs" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
               API
             </Link>
@@ -108,11 +105,13 @@ export default function OverviewPage() {
         {/* Hero */}
         <section className="max-w-5xl mx-auto px-6 pt-16 pb-12 text-center space-y-6">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
-            Search 9 million+<br />
-            <span className="text-brand">mathematical theorems</span>
+            Search 18 million+<br />
+            <span className="text-brand">mathematical dependencies</span>
           </h1>
           <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
-            Describe a result in natural language, and TheoremSearch finds it across arXiv, the Stacks Project, and more. <strong className="text-slate-700">70% more accurate than LLM search.</strong>
+            A unified statement-level dependency graph spanning both informal and formal mathematics:
+            11.7 million arXiv statements linked to the Lean 4 / Mathlib ecosystem through a shared
+            embedding space.
           </p>
 
           <p className="text-sm text-slate-400">
@@ -128,28 +127,16 @@ export default function OverviewPage() {
           </p>
 
           <div className="flex items-center justify-center gap-3 pt-2">
-            <Link href="/search"
+            <a href="https://huggingface.co/datasets/uw-math-ai/theorem-matching" target="_blank" rel="noopener noreferrer"
               className="px-7 py-2.5 bg-brand text-white rounded-md font-semibold text-sm hover:bg-brand/90 transition-colors">
-              Try TheoremSearch
-            </Link>
-            <a href="https://arxiv.org/abs/2602.05216" target="_blank" rel="noopener noreferrer"
+              Dataset →
+            </a>
+            <a href="https://arxiv.org/abs/2606.25363" target="_blank" rel="noopener noreferrer"
               className="px-7 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-md font-semibold text-sm hover:bg-slate-50 transition-colors">
               Read the paper →
             </a>
           </div>
         </section>
-
-        {/* Screenshot */}
-        <div className="max-w-5xl mx-auto px-6 pb-16">
-          <Image
-            src="/theorem-search-screenshot.png"
-            alt="TheoremSearch screenshot"
-            width={1200}
-            height={800}
-            className="w-full rounded-lg border border-slate-200"
-            loading="eager"
-          />
-        </div>
 
         {/* Stats */}
         <div className="border-y border-slate-100 bg-slate-50/60">
@@ -169,27 +156,23 @@ export default function OverviewPage() {
           <section className="space-y-4">
             <SectionHeading>Motivation</SectionHeading>
             <p className="text-slate-600 leading-relaxed">
-              Mathematical knowledge is distributed across millions of papers. However, existing
-              search tools only operate at the document level, and important results can be hard
-              to surface in lesser-known sources. We want to democratize math by enabling search
-              at the theorem level.
+              Mathematical knowledge is organized around statements and their dependencies, but this structure is
+              exposed unevenly. Informal papers cite mostly at the document level, while formal proof assistants
+              like Lean record fine-grained dependencies over a much smaller body of mathematics.
+              This asymmetry limits attribution, duplication detection, and automated formalization.
             </p>
             <p className="text-slate-600 leading-relaxed">
-              <strong>For mathematicians</strong>, a bottleneck in modern research is discovery; 
-              i.e., locating relevant lemmas or prior results already buried somewhere in the
-              literature. Furthermore, sources like The Stacks Project are valuable repositories
-              of branch-specific knowledge, but Google cannot reliably surface individual results,
-              and any built-in search capabilities are largely limited to keywords and tags. 
-              Through documented case studies and user feedback, TheoremSearch is a reliable
-              tool for theorem discovery.
+              <strong>For mathematicians</strong>, a unified dependency graph makes it possible to check whether
+              a result is already known and trace exactly which lemmas a proof relies on. A
+              <a href="https://arxiv.org/abs/2412.03775" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline"> 2024 study</a>{' '}
+              found that 2.4% of withdrawn arXiv submissions were self-identified as non-novel, which might have been identified
+              earlier with improved cross-paper dependency tracking.
             </p>
             <p className="text-slate-600 leading-relaxed">
-              <strong>For AI agents</strong>, we believe reliable autonomous mathematical discovery necessitates granular access to relevant literature. Many of the recent AI breakthroughs on{' '}
-              <a href="https://www.erdosproblems.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Erdős problems</a>{' '}
-              turned out to be rediscoveries of results already in the literature. For example, 9/13 of
-              <a href="https://arxiv.org/abs/2602.10177" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline"> DeepMind Aletheia&rsquo;s</a>{' '}
-              meaningfully correct generated solutions were either classified as independent rediscoveries or identifications of results in existing literature.
-              It is also true that LLMs often fabricate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
+              <strong>For AI agents</strong>, the graph gives neural theorem provers and autoformalization
+              tools a access to mathematics as a graph. Instead of retrieving flat semantic neighbors, an agent
+              can walk the graph to find connected lemmas and related formalizations across informal and formal
+              spaces.
             </p>
           </section>
 
@@ -210,72 +193,79 @@ export default function OverviewPage() {
             </ol>
           </section>
 
-          {/* Performance + Data Sources */}
+          {/* Overview */}
           <section className="space-y-5">
             <SectionHeading>Overview</SectionHeading>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Informal extractors */}
               <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-3">Retrieval Performance (Hit@10)</h3>
+                <h3 className="text-sm font-bold text-slate-700 mb-3">Informal Dependency Extractors</h3>
                 <div className="overflow-hidden rounded-md border border-slate-200">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="text-left px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">MODEL</th>
-                        <th className="text-right px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">THM-LEVEL</th>
-                        <th className="text-right px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">PAPER-LEVEL</th>
+                        <th className="text-left px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">EXTRACTOR</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">EDGES</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">PRECISION</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
-                      {PERFORMANCE.map(r => (
-                        <tr key={r.model} className={r.highlight ? 'bg-brand/5' : ''}>
-                          <td className={`px-4 py-2.5 text-xs ${r.highlight ? 'font-bold text-slate-900' : 'text-slate-600'}`}>{r.model}</td>
-                          <td className={`px-4 py-2.5 text-xs text-right ${r.highlight ? 'font-bold text-brand' : 'text-slate-600'}`}>{r.theorem}</td>
-                          <td className={`px-4 py-2.5 text-xs text-right ${r.highlight ? 'font-bold text-brand' : 'text-slate-600'}`}>{r.paper}</td>
+                      {EXTRACTORS.map((r, i) => (
+                        <tr key={r.extractor} className={i === EXTRACTORS.length - 1 ? 'bg-brand/5' : ''}>
+                          <td className={`px-4 py-2.5 text-xs ${i === EXTRACTORS.length - 1 ? 'font-bold text-slate-900' : 'text-slate-600'}`}>{r.extractor}</td>
+                          <td className={`px-4 py-2.5 text-xs text-right font-mono ${i === EXTRACTORS.length - 1 ? 'font-bold text-brand' : 'text-slate-600'}`}>{r.edges}</td>
+                          <td className={`px-4 py-2.5 text-xs text-right ${i === EXTRACTORS.length - 1 ? 'font-bold text-brand' : 'text-slate-600'}`}>{r.precision}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 <p className="mt-2 text-[10px] text-slate-400 leading-relaxed">
-                  Theorem-level = retrieval of exact theorem statements<br />
-                  Paper-level = retrieval of the correct paper containing the theorem
+                  Precision estimated by LLM judge (Kimi K2.5) on 500 sampled arXiv papers.
+                  Each released edge retains its extractor label.
                 </p>
               </div>
+
+              {/* Formal edge types */}
               <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-3">Data Sources</h3>
+                <h3 className="text-sm font-bold text-slate-700 mb-3">Formal Edge Types</h3>
                 <div className="overflow-hidden rounded-md border border-slate-200">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="text-left px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">SOURCE</th>
-                        <th className="text-right px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">THEOREMS</th>
+                        <th className="text-left px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">TYPE</th>
+                        <th className="text-left px-4 py-2.5 text-[10px] font-bold tracking-widest text-slate-400">DESCRIPTION</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
-                      {SOURCES.map(r => (
-                        <tr key={r.name}>
-                          <td className="px-4 py-2 text-xs text-slate-600">{r.name}</td>
-                          <td className="px-4 py-2 text-xs text-right text-slate-600 font-mono">{r.count}</td>
+                      {EDGE_TYPES.map(r => (
+                        <tr key={r.type}>
+                          <td className="px-4 py-2 text-xs font-mono text-brand font-medium">{r.type}</td>
+                          <td className="px-4 py-2 text-xs text-slate-600">{r.description}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+                <p className="mt-2 text-[10px] text-slate-400 leading-relaxed">
+                  LeanGraph extracts 388,105 nodes and 11.3M typed edges across 25 Lean projects
+                  (Mathlib v4.27–v4.29 plus 24 community formalizations).
+                </p>
               </div>
+
             </div>
           </section>
 
-          {/* API */}
+          {/* REST API */}
           <section className="space-y-4">
             <SectionHeading>REST API</SectionHeading>
             <p className="text-slate-600 leading-relaxed">
-              TheoremSearch provides a production REST API for semantic theorem search.
+              TheoremGraph provides a REST API for semantic search and dependency graph traversal.
             </p>
-            <CodeBlock>{`curl https://api.theoremsearch.com/search \\
-  -H "Content-Type: application/json" \\
-  -d '{"query": "smooth DM stack codimension one", "n_results": 5}'`}</CodeBlock>
+            <CodeBlock>{`curl "https://api.theoremsearch.com/graph/embedding?query=fundamental+theorem+of+calculus&n_results=5"`}</CodeBlock>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Returns theorem-level results with metadata and similarity scores.{' '}
+              Returns ranked matches across informal and formal corpora.{' '}
               <Link href="/docs" className="text-brand hover:underline">Full API reference →</Link>
             </p>
           </section>
@@ -284,7 +274,7 @@ export default function OverviewPage() {
           <section className="space-y-4">
             <SectionHeading>MCP Tool</SectionHeading>
             <p className="text-slate-600 leading-relaxed">
-              TheoremSearch is available as an MCP tool for AI agents via a single{' '}
+              TheoremGraph is also available as an MCP tool for AI agents via a single{' '}
               <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[13px] font-mono text-slate-700">theorem_search</code>{' '}
               tool.
             </p>
@@ -302,31 +292,30 @@ export default function OverviewPage() {
       <footer className="border-t border-slate-200 bg-slate-50/50 mt-4">
         <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
 
-          {/* Acknowledgements */}
           <p className="text-slate-500 text-sm leading-relaxed">
             We thank the{' '}
             <a href="https://escience.washington.edu/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">UW eScience Institute</a>{' '}
             for supporting this project, and{' '}
             <a href="https://nebius.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Nebius</a>{' '}
             for inference infrastructure. Our tool uses{' '}
-            <a href="https://tokenfactory.nebius.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Nebius Token Factory</a>{' '}
-            with{' '}
             <a href="https://tokenfactory.nebius.com/models?search=emb&model-id=Qwen/Qwen3-Embedding-8B" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Qwen3-Embedding-8B</a>{' '}
-            for query embedding. For questions or collaboration, reach out to{' '}
+            for embedding. The judged formal–informal matches are released at{' '}
+            <a href="https://huggingface.co/datasets/uw-math-ai/theorem-matching" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Hugging Face</a>.
+            For questions or collaboration, reach out to{' '}
             <a href="mailto:vilin@uw.edu" className="text-brand hover:underline">vilin@uw.edu</a>.
           </p>
 
-          {/* Citation */}
           <div className="space-y-3">
             <p className="text-xs font-bold tracking-widest text-slate-400">CITATION</p>
-            <CodeBlock>{`@article{alexander2026semantic,
-  title  = {Semantic Search over 9 Million Mathematical Theorems},
-  author = {Alexander, Luke and Leonen, Eric and Szeto, Sophie and Remizov, Artemii
-            and Tejeda, Ignacio and Inchiostro, Giovanni and Ilin, Vasily},
-  journal= {arXiv preprint arXiv:2602.05216},
+            <CodeBlock>{`@article{kurgan2026theoremsearch,
+  title  = {TheoremGraph: Bridging Formal and Informal Mathematics},
+  author = {Kurgan, Simon and Wang, Evan and Leonen, Eric and Szeto, Sophie
+            and Alexander, Luke and Remizov, Artemii and Alper, Jarod
+            and Inchiostro, Giovanni and Ilin, Vasily},
+  journal= {arXiv preprint arXiv:2606.25363},
   year   = {2026},
-  doi    = {10.48550/arXiv.2602.05216},
-  url    = {https://arxiv.org/abs/2602.05216}
+  doi    = {10.48550/arXiv.2606.25363},
+  url    = {https://arxiv.org/abs/2606.25363}
 }`}</CodeBlock>
           </div>
 

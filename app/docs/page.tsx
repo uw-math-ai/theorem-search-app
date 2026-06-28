@@ -98,6 +98,9 @@ const NAV = [
   { href: '#graph', label: 'GET /graph' },
   { href: '#paper-search', label: 'GET /paper-search' },
   { href: '#paper-links', label: 'GET /paper-links' },
+  { href: '#graph-embedding', label: 'GET /graph/embedding' },
+  { href: '#graph-statement', label: 'GET /graph/statement' },
+  { href: '#graph-paper', label: 'GET /graph/paper' },
   { href: '#mcp', label: 'MCP' },
 ];
 
@@ -327,7 +330,7 @@ export default function DocsPage() {
             <SectionHeading badge="GET">Paper Links</SectionHeading>
             <Endpoint method="GET" path="/paper-links" />
             <p className="text-slate-600 text-sm leading-relaxed">
-              Returns all directed citation edges among papers in the graph dataset as source → target pairs of paper UUIDs. Useful for constructing citation network visualizations.
+              Returns all directed citation edges among papers in the graph dataset as (source, target) pairs of paper UUIDs.
             </p>
 
             <div>
@@ -343,6 +346,168 @@ export default function DocsPage() {
   ]
 }`}</CodeBlock>
             </div>
+          </Section>
+
+          <Divider />
+
+          {/* GET /graph/embedding */}
+          <Section id="graph-embedding">
+            <SectionHeading badge="GET">Graph Embedding Search</SectionHeading>
+            <Endpoint method="GET" path="/graph/embedding" />
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Peform semantic search over the entire TheoremGraph corpus, formal and informal statements. Embeds the query with{' '}
+              <Code>Qwen3-Embedding-8B</Code> and returns statements ranked by cosine similarity.
+            </p>
+
+            <div>
+              <Label>QUERY PARAMETERS</Label>
+              <ParamTable rows={[
+                { name: 'query',     type: 'string',  required: true,  description: 'Natural-language description of the mathematical result to find.' },
+                { name: 'n_results', type: 'integer', default: '10',   description: 'Number of results to return.' },
+                { name: 'formality', type: 'string',  default: '"both"', description: 'Filter by corpus: "informal" (arXiv), "formal" (Lean), or "both".' },
+              ]} />
+            </div>
+
+            <div>
+              <Label>EXAMPLE</Label>
+              <CodeBlock>{`curl "https://api.theoremsearch.com/graph/embedding?query=fundamental+theorem+of+calculus&n_results=5"`}</CodeBlock>
+            </div>
+
+            <div>
+              <Label>RESPONSE</Label>
+              <CodeBlock>{`{
+  "results": [
+    {
+      "statement_id": "uuid",
+      "name": "Theorem 1.1",
+      "body": "If f is continuous on [a, b] and differentiable on (a, b)...",
+      "slogan": "Every continuous function on a closed interval has an antiderivative.",
+      "formality": "informal",
+      "similarity": 0.943,
+      "paper": {
+        "title": "Real Analysis Notes",
+        "external_id": "2301.00001",
+        "source": "arXiv"
+      }
+    }
+  ]
+}`}</CodeBlock>
+            </div>
+          </Section>
+
+          <Divider />
+
+          {/* GET /graph/statement/{id} */}
+          <Section id="graph-statement">
+            <SectionHeading badge="GET">Graph Statement</SectionHeading>
+            <Endpoint method="GET" path="/graph/statement/{'{statement_id}'}" />
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Returns a statement and its direct dependency neighborhood. Use the{' '}
+              <Code>direction</Code> parameter to walk outward along dependency edges, and{' '}
+              <Code>formality</Code> to select informal or formal edges.
+            </p>
+
+            <div>
+              <Label>PATH PARAMETER</Label>
+              <ParamTable rows={[
+                { name: 'statement_id', type: 'string', required: true, description: 'UUID of the statement, obtained from /graph/embedding or /graph/paper.' },
+              ]} />
+            </div>
+
+            <div>
+              <Label>QUERY PARAMETERS</Label>
+              <ParamTable rows={[
+                { name: 'direction', type: 'string', default: '"both"',     description: '"src" (what this statement uses), "dep" (what uses this statement), or "both".' },
+                { name: 'formality', type: 'string', default: '"both"',     description: '"informal", "formal", or "both".' },
+              ]} />
+            </div>
+
+            <div>
+              <Label>EXAMPLE</Label>
+              <CodeBlock>{`curl "https://api.theoremsearch.com/graph/statement/<statement_id>?direction=both&formality=formal"`}</CodeBlock>
+            </div>
+
+            <div>
+              <Label>RESPONSE</Label>
+              <CodeBlock>{`{
+  "statement": {
+    "statement_id": "uuid",
+    "name": "Theorem 1.1",
+    "body": "If f is continuous on [a, b]...",
+    "slogan": "...",
+    "formality": "formal"
+  },
+  "neighbors": [
+    {
+      "statement_id": "uuid",
+      "name": "Lemma 2.3",
+      "direction": "src",
+      "edge_type": "proof",
+      "formality": "formal"
+    }
+  ]
+}`}</CodeBlock>
+            </div>
+          </Section>
+
+          <Divider />
+
+          {/* GET /graph/paper/{id} */}
+          <Section id="graph-paper">
+            <SectionHeading badge="GET">Graph Paper</SectionHeading>
+            <Endpoint method="GET" path="/graph/paper/{'{paper_id}'}" />
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Returns all statements and dependency edges for an arXiv paper or Lean repository.
+              Accepts either a UUID path parameter or an{' '}
+              <Code>external_id</Code> query parameter for lookup by arXiv ID or repo slug.
+            </p>
+
+            <div>
+              <Label>PATH PARAMETER (OR QUERY PARAMETER)</Label>
+              <ParamTable rows={[
+                { name: 'paper_id',    type: 'string', required: false, description: 'UUID of the paper (path parameter).' },
+                { name: 'external_id', type: 'string', required: false, description: 'arXiv ID or Lean repo slug, e.g. 2301.00001 or leanprover-community/mathlib4.' },
+              ]} />
+            </div>
+
+            <div>
+              <Label>EXAMPLE</Label>
+              <CodeBlock>{`curl "https://api.theoremsearch.com/graph/paper?external_id=2301.00001"`}</CodeBlock>
+            </div>
+
+            <div>
+              <Label>RESPONSE</Label>
+              <CodeBlock>{`{
+  "paper": {
+    "paper_id": "uuid",
+    "title": "Real Analysis Notes",
+    "external_id": "2301.00001",
+    "source": "arXiv"
+  },
+  "statements": [
+    {
+      "statement_id": "uuid",
+      "name": "Theorem 1.1",
+      "body": "If f is continuous on [a, b]...",
+      "slogan": "...",
+      "formality": "informal"
+    }
+  ],
+  "dependencies": [
+    {
+      "src_statement_id": "uuid",
+      "dep_statement_id": "uuid",
+      "edge_type": "proof",
+      "formality": "informal"
+    }
+  ]
+}`}</CodeBlock>
+            </div>
+
+            <p className="text-slate-500 text-xs leading-relaxed">
+              Typical workflow: search with <Code>/graph/embedding</Code> to get a{' '}
+              <Code>statement_id</Code>, then walk its neighborhood with <Code>/graph/statement/{'{id}'}</Code>.
+            </p>
           </Section>
 
           <Divider />
