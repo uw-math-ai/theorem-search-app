@@ -107,7 +107,7 @@ export default function TheoremGraphPage() {
           </p>
 
           <div className="flex items-center justify-center gap-3 pt-2">
-            <a href="https://huggingface.co/datasets/uw-math-ai/theorem-matching" target="_blank" rel="noopener noreferrer"
+            <a href="https://huggingface.co/datasets/uw-math-ai/math-graph" target="_blank" rel="noopener noreferrer"
               className="px-7 py-2.5 bg-brand text-white rounded-xs font-semibold text-sm hover:bg-brand/90 transition-colors">
               Dataset
             </a>
