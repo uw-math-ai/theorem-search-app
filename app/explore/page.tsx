@@ -282,7 +282,7 @@ export default function ExplorePage() {
 
   return (
     <div className="flex flex-col bg-white" style={{ height: '100dvh' }}>
-      <SiteHeader active="explore" />
+      <SiteHeader />
 
       {/* Toolbar */}
       <div className="shrink-0 border-b border-slate-100 px-4 py-2 flex items-center gap-3 bg-white z-20 relative">
