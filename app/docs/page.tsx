@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import { SiteFooter } from '@/src/components/SiteFooter';
 
 export const metadata = { title: 'API Docs — TheoremSearch' };
 
@@ -12,7 +13,7 @@ function SectionHeading({ badge, children }: { badge?: string; children: ReactNo
   return (
     <div className="flex items-center gap-3">
       {badge && (
-        <span className="px-2 py-0.5 bg-brand text-white text-[10px] font-bold rounded font-mono shrink-0">
+        <span className="px-2 py-0.5 bg-brand text-white text-[10px] font-bold rounded-xs font-mono shrink-0">
           {badge}
         </span>
       )}
@@ -27,7 +28,7 @@ function Label({ children }: { children: ReactNode }) {
 
 function Code({ children }: { children: ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[13px] font-mono text-slate-700">
+    <code className="px-1.5 py-0.5 bg-slate-100 rounded-xs text-[13px] font-mono text-slate-700">
       {children}
     </code>
   );
@@ -35,7 +36,7 @@ function Code({ children }: { children: ReactNode }) {
 
 function CodeBlock({ children }: { children: string }) {
   return (
-    <pre className="bg-slate-900 text-slate-100 rounded-xl p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
+    <pre className="bg-slate-900 text-slate-100 rounded-xs p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
       <code>{children}</code>
     </pre>
   );
@@ -45,7 +46,7 @@ function ParamTable({ rows }: {
   rows: { name: string; type: string; required?: boolean; default?: string; description: string }[];
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className="overflow-x-auto rounded-xs border border-slate-200">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200">
@@ -84,7 +85,7 @@ function Endpoint({ method, path }: { method: string; path: string }) {
   };
   return (
     <div className="flex items-center gap-2 font-mono text-sm">
-      <span className={`px-2 py-0.5 rounded text-xs font-bold ${colors[method] ?? 'bg-slate-100 text-slate-600'}`}>
+      <span className={`px-2 py-0.5 rounded-xs text-xs font-bold ${colors[method] ?? 'bg-slate-100 text-slate-600'}`}>
         {method}
       </span>
       <span className="text-slate-700">{path}</span>
@@ -111,7 +112,7 @@ export default function DocsPage() {
       <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-3.5">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Image src="/math-ai-logo.jpg" alt="Math AI Lab" width={26} height={26} className="rounded-lg" />
+            <Image src="/math-ai-mark.svg" alt="Math AI Lab" width={26} height={26} className="rounded-xs" />
             <span className="font-bold text-slate-900">
               Theorem<span className="text-brand">Search</span>
             </span>
@@ -146,7 +147,7 @@ export default function DocsPage() {
             <p className="text-slate-600 leading-relaxed">
               TheoremSearch exposes a REST API for semantic theorem search, dependency graph exploration, and paper lookup. All endpoints are available at the base URL below.
             </p>
-            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xs px-4 py-3">
               <Label>BASE URL</Label>
               <code className="text-sm font-mono text-brand">https://api.theoremsearch.com</code>
             </div>
@@ -230,7 +231,7 @@ export default function DocsPage() {
             <SectionHeading badge="GET">Graph</SectionHeading>
             <Endpoint method="GET" path="/graph?external_id={id}" />
             <p className="text-slate-600 text-sm leading-relaxed">
-              Returns the full dependency graph for a paper — all its formal statements, and the directed edges showing which statements depend on which (including cross-paper citations).
+              Returns the full dependency graph for a paper, including its formal statements and directed edges.
             </p>
 
             <div>
@@ -505,7 +506,7 @@ export default function DocsPage() {
             </div>
 
             <p className="text-slate-500 text-xs leading-relaxed">
-              Typical workflow: search with <Code>/graph/embedding</Code> to get a{' '}
+              Tip: search with <Code>/graph/embedding</Code> to get a{' '}
               <Code>statement_id</Code>, then walk its neighborhood with <Code>/graph/statement/{'{id}'}</Code>.
             </p>
           </Section>
@@ -521,9 +522,9 @@ export default function DocsPage() {
               <a href="#search" className="text-brand hover:underline">POST /search</a>.
             </p>
 
-            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xs px-4 py-3">
               <span className="text-[10px] font-bold tracking-widest text-slate-400 shrink-0">ENDPOINT</span>
-              <code className="text-sm font-mono text-brand">https://api.theoremsearch.com/mcp</code>
+              <code className="text-sm font-mono text-brand break-all min-w-0">https://api.theoremsearch.com/mcp</code>
             </div>
 
             <div>
@@ -569,13 +570,7 @@ export default function DocsPage() {
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 py-6 mt-8">
-        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-[11px] text-slate-400">
-          <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
-          <Link href="/search" className="hover:text-brand transition-colors">← Back to search</Link>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

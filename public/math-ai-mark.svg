@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="768pt" height="767.999994pt" viewBox="0 0 768 767.999994">
+<defs>
+<g>
+<g id="glyph-0-0">
+<path d="M 420.070312 -388.542969 L 352.941406 -256.824219 L 155.621094 -256.824219 L 88.488281 -388.542969 L 57.46875 -372.777344 L 253.265625 7.628906 L 255.296875 7.628906 L 451.09375 -372.777344 Z M 173.929688 -222.242188 L 334.632812 -222.242188 L 254.789062 -65.605469 L 253.773438 -65.605469 Z M 173.929688 -222.242188 "/>
+</g>
+</g>
+<clipPath id="clip-0">
+<rect x="0" y="0" width="519" height="696"/>
+</clipPath>
+<g id="source-14" clip-path="url(#clip-0)">
+<g fill="rgb(19.60907%, 0%, 43.139648%)" fill-opacity="1">
+<use xlink:href="#glyph-0-0" x="0.799997" y="545.875419"/>
+</g>
+</g>
+<clipPath id="clip-1">
+<rect x="0" y="0" width="519" height="696"/>
+</clipPath>
+<g id="source-17" clip-path="url(#clip-1)">
+<g fill="rgb(19.60907%, 0%, 43.139648%)" fill-opacity="1">
+<use xlink:href="#glyph-0-0" x="0.420476" y="545.875419"/>
+</g>
+</g>
+</defs>
+<use xlink:href="#source-14" transform="matrix(1, 0, 0, 1, 76, 25)"/>
+<use xlink:href="#source-17" transform="matrix(1, 0, 0, 1, 174, 25)"/>
+</svg>

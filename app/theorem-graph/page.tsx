@@ -1,6 +1,7 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import { SiteHeader } from '@/src/components/SiteHeader';
+import { SiteFooter } from '@/src/components/SiteFooter';
 
 export const metadata = {
   title: 'TheoremGraph — Mathematical Dependency Graph',
@@ -14,7 +15,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
 
 function CodeBlock({ children }: { children: string }) {
   return (
-    <pre className="bg-slate-900 text-slate-100 rounded-md p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
+    <pre className="bg-slate-900 text-slate-100 rounded-xs p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
       <code>{children}</code>
     </pre>
   );
@@ -78,27 +79,7 @@ export default function TheoremGraphPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
 
-      {/* Nav */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-100 px-6 py-3.5">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Image src="/math-ai-logo.jpg" alt="Math AI Lab" width={26} height={26} className="rounded" />
-            <span className="font-bold text-slate-900">
-              Theorem<span className="text-brand">Search</span>
-            </span>
-          </Link>
-          <nav className="flex items-center gap-5">
-            <span className="text-sm font-semibold text-brand">TheoremGraph</span>
-            <Link href="/docs" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-              API
-            </Link>
-            <Link href="/search"
-              className="px-4 py-1.5 bg-brand text-white rounded text-xs font-bold hover:bg-brand/90 transition-colors">
-              Search →
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main>
 
@@ -109,9 +90,8 @@ export default function TheoremGraphPage() {
             <span className="text-brand">mathematical dependencies</span>
           </h1>
           <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed">
-            A unified statement-level dependency graph spanning both informal and formal mathematics:
-            11.7 million arXiv statements linked to the Lean 4 / Mathlib ecosystem through a shared
-            embedding space.
+            A unified statement-level dependency graph spanning both informal and formal mathematics, including
+            11.7 million arXiv statements linked to Mathlib through a shared embedding space.
           </p>
 
           <p className="text-sm text-slate-400">
@@ -128,11 +108,11 @@ export default function TheoremGraphPage() {
 
           <div className="flex items-center justify-center gap-3 pt-2">
             <a href="https://huggingface.co/datasets/uw-math-ai/theorem-matching" target="_blank" rel="noopener noreferrer"
-              className="px-7 py-2.5 bg-brand text-white rounded-md font-semibold text-sm hover:bg-brand/90 transition-colors">
-              Dataset →
+              className="px-7 py-2.5 bg-brand text-white rounded-xs font-semibold text-sm hover:bg-brand/90 transition-colors">
+              Dataset
             </a>
             <a href="https://arxiv.org/abs/2606.25363" target="_blank" rel="noopener noreferrer"
-              className="px-7 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-md font-semibold text-sm hover:bg-slate-50 transition-colors">
+              className="px-7 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xs font-semibold text-sm hover:bg-slate-50 transition-colors">
               Read the paper →
             </a>
           </div>
@@ -201,7 +181,7 @@ export default function TheoremGraphPage() {
               {/* Informal extractors */}
               <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Informal Dependency Extractors</h3>
-                <div className="overflow-hidden rounded-md border border-slate-200">
+                <div className="overflow-hidden rounded-xs border border-slate-200">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
@@ -223,14 +203,13 @@ export default function TheoremGraphPage() {
                 </div>
                 <p className="mt-2 text-[10px] text-slate-400 leading-relaxed">
                   Precision estimated by LLM judge (Kimi K2.5) on 500 sampled arXiv papers.
-                  Each released edge retains its extractor label.
                 </p>
               </div>
 
               {/* Formal edge types */}
               <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Formal Edge Types</h3>
-                <div className="overflow-hidden rounded-md border border-slate-200">
+                <div className="overflow-hidden rounded-xs border border-slate-200">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
@@ -250,7 +229,7 @@ export default function TheoremGraphPage() {
                 </div>
                 <p className="mt-2 text-[10px] text-slate-400 leading-relaxed">
                   LeanGraph extracts 388,105 nodes and 11.3M typed edges across 25 Lean projects
-                  (Mathlib v4.27–v4.29 plus 24 community formalizations).
+                  (Mathlib v4.27-v4.29 plus 24 community formalizations).
                 </p>
               </div>
 
@@ -263,9 +242,9 @@ export default function TheoremGraphPage() {
             <p className="text-slate-600 leading-relaxed">
               TheoremGraph provides a REST API for semantic search and dependency graph traversal.
             </p>
-            <CodeBlock>{`curl "https://api.theoremsearch.com/graph/embedding?query=fundamental+theorem+of+calculus&n_results=5"`}</CodeBlock>
+            <CodeBlock>{`curl "https://api.theoremsearch.com/graph/paper?external_id=2301.00001"`}</CodeBlock>
             <p className="text-slate-600 text-sm leading-relaxed">
-              Returns ranked matches across informal and formal corpora.{' '}
+              Returns all statements and dependency edges for an arXiv paper or Lean repository.{' '}
               <Link href="/docs" className="text-brand hover:underline">Full API reference →</Link>
             </p>
           </section>
@@ -275,12 +254,12 @@ export default function TheoremGraphPage() {
             <SectionHeading>MCP Tool</SectionHeading>
             <p className="text-slate-600 leading-relaxed">
               TheoremGraph is also available as an MCP tool for AI agents via a single{' '}
-              <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[13px] font-mono text-slate-700">theorem_search</code>{' '}
+              <code className="px-1.5 py-0.5 bg-slate-100 rounded-xs text-[13px] font-mono text-slate-700">theorem_search</code>{' '}
               tool.
             </p>
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-md px-4 py-3">
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xs px-4 py-3">
               <span className="text-[10px] font-bold tracking-widest text-slate-400 shrink-0">ENDPOINT</span>
-              <code className="text-sm font-mono text-brand">https://api.theoremsearch.com/mcp</code>
+              <code className="text-sm font-mono text-brand break-all min-w-0">https://api.theoremsearch.com/mcp</code>
             </div>
           </section>
 
@@ -288,48 +267,7 @@ export default function TheoremGraphPage() {
 
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-50/50 mt-4">
-        <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
-
-          <p className="text-slate-500 text-sm leading-relaxed">
-            We thank the{' '}
-            <a href="https://escience.washington.edu/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">UW eScience Institute</a>{' '}
-            for supporting this project, and{' '}
-            <a href="https://nebius.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Nebius</a>{' '}
-            for inference infrastructure. Our tool uses{' '}
-            <a href="https://tokenfactory.nebius.com/models?search=emb&model-id=Qwen/Qwen3-Embedding-8B" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Qwen3-Embedding-8B</a>{' '}
-            for embedding. The judged formal–informal matches are released at{' '}
-            <a href="https://huggingface.co/datasets/uw-math-ai/theorem-matching" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Hugging Face</a>.
-            For questions or collaboration, reach out to{' '}
-            <a href="mailto:vilin@uw.edu" className="text-brand hover:underline">vilin@uw.edu</a>.
-          </p>
-
-          <div className="space-y-3">
-            <p className="text-xs font-bold tracking-widest text-slate-400">CITATION</p>
-            <CodeBlock>{`@article{kurgan2026theoremsearch,
-  title  = {TheoremGraph: Bridging Formal and Informal Mathematics},
-  author = {Kurgan, Simon and Wang, Evan and Leonen, Eric and Szeto, Sophie
-            and Alexander, Luke and Remizov, Artemii and Alper, Jarod
-            and Inchiostro, Giovanni and Ilin, Vasily},
-  journal= {arXiv preprint arXiv:2606.25363},
-  year   = {2026},
-  doi    = {10.48550/arXiv.2606.25363},
-  url    = {https://arxiv.org/abs/2606.25363}
-}`}</CodeBlock>
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
-            <div className="flex items-center gap-4">
-              <Link href="/privacy" className="hover:text-brand transition-colors">Privacy</Link>
-              <Link href="/improve" className="hover:text-brand transition-colors">Help us improve</Link>
-              <a href="https://github.com/uw-math-ai" target="_blank" rel="noopener noreferrer" className="hover:text-brand transition-colors">GitHub</a>
-            </div>
-          </div>
-
-        </div>
-      </footer>
+      <SiteFooter product="graph" />
 
     </div>
   );
