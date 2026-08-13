@@ -1,6 +1,8 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import Image from 'next/image';
+import { SiteHeader } from '@/src/components/SiteHeader';
+import { SiteFooter } from '@/src/components/SiteFooter';
 
 export const metadata = {
   title: 'TheoremSearch — Semantic Search for Mathematical Theorems',
@@ -14,7 +16,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
 
 function CodeBlock({ children }: { children: string }) {
   return (
-    <pre className="bg-slate-900 text-slate-100 rounded-md p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
+    <pre className="bg-slate-900 text-slate-100 rounded-xs p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
       <code>{children}</code>
     </pre>
   );
@@ -26,6 +28,7 @@ const AUTHORS = [
   { name: 'Sophie Szeto',        href: 'https://www.linkedin.com/in/sophie-szeto/' },
   { name: 'Artemii Remizov',     href: 'https://www.linkedin.com/in/artemii-remizov-62783631b/' },
   { name: 'Ignacio Tejeda',      href: 'https://www.ignaciotejeda.com/' },
+  { name: 'Jarod Alper',         href: 'https://sites.math.washington.edu//~jarod/' },
   { name: 'Giovanni Inchiostro', href: 'https://sites.math.washington.edu/~ginchios/' },
   { name: 'Vasily Ilin',         href: 'https://vilin97.github.io/' },
 ];
@@ -78,26 +81,7 @@ export default function OverviewPage() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
 
-      {/* Nav */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-100 px-6 py-3.5">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Image src="/math-ai-logo.jpg" alt="Math AI Lab" width={26} height={26} className="rounded" />
-            <span className="font-bold text-slate-900">
-              Theorem<span className="text-brand">Search</span>
-            </span>
-          </Link>
-          <nav className="flex items-center gap-5">
-            <Link href="/docs" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-              API
-            </Link>
-            <Link href="/search"
-              className="px-4 py-1.5 bg-brand text-white rounded text-xs font-bold hover:bg-brand/90 transition-colors">
-              Search →
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main>
 
@@ -125,11 +109,11 @@ export default function OverviewPage() {
 
           <div className="flex items-center justify-center gap-3 pt-2">
             <Link href="/search"
-              className="px-7 py-2.5 bg-brand text-white rounded-md font-semibold text-sm hover:bg-brand/90 transition-colors">
-              Try TheoremSearch
+              className="px-7 py-2.5 bg-brand text-white rounded-xs font-semibold text-sm hover:bg-brand/90 transition-colors">
+              Explore
             </Link>
             <a href="https://arxiv.org/abs/2602.05216" target="_blank" rel="noopener noreferrer"
-              className="px-7 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-md font-semibold text-sm hover:bg-slate-50 transition-colors">
+              className="px-7 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xs font-semibold text-sm hover:bg-slate-50 transition-colors">
               Read the paper →
             </a>
           </div>
@@ -142,7 +126,7 @@ export default function OverviewPage() {
             alt="TheoremSearch screenshot"
             width={1200}
             height={800}
-            className="w-full rounded-lg border border-slate-200"
+            className="w-full rounded-xs border border-slate-200"
             loading="eager"
           />
         </div>
@@ -165,19 +149,27 @@ export default function OverviewPage() {
           <section className="space-y-4">
             <SectionHeading>Motivation</SectionHeading>
             <p className="text-slate-600 leading-relaxed">
-              Mathematical knowledge is scattered across millions of papers. Important results hide as lemmas in obscure sources, and existing search tools only operate at the document level.
+              Mathematical knowledge is distributed across millions of papers. However, existing
+              search tools only operate at the document level, and important results can be hard
+              to surface in lesser-known sources. We want to democratize math by enabling search
+              at the theorem level.
             </p>
             <p className="text-slate-600 leading-relaxed">
-              <strong>For mathematicians</strong>, many of the recent AI breakthroughs on{' '}
+              <strong>For mathematicians</strong>, a bottleneck in modern research is discovery; 
+              i.e., locating relevant lemmas or prior results already buried somewhere in the
+              literature. Furthermore, sources like The Stacks Project are valuable repositories
+              of branch-specific knowledge, but Google cannot reliably surface individual results,
+              and any built-in search capabilities are largely limited to keywords and tags. 
+              Through documented case studies and user feedback, TheoremSearch is a reliable
+              tool for theorem discovery.
+            </p>
+            <p className="text-slate-600 leading-relaxed">
+              <strong>For AI agents</strong>, we believe reliable autonomous mathematical discovery necessitates granular access to relevant literature. Many of the recent AI breakthroughs on{' '}
               <a href="https://www.erdosproblems.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Erdős problems</a>{' '}
-              turned out to be rediscoveries of results already in the literature. As{' '}
-              <a href="https://terrytao.wordpress.com/2025/11/05/mathematical-exploration-and-discovery-at-scale/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Tao observed</a>,
-              many &ldquo;open&rdquo; problems are open through obscurity rather than difficulty.{' '}
-              <a href="https://arxiv.org/abs/2602.10177" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">DeepMind&rsquo;s Aletheia</a>{' '}
-              also confirms this: most of its correct solutions were identifications of existing literature.
-            </p>
-            <p className="text-slate-600 leading-relaxed">
-              <strong>For AI agents</strong>, the bottleneck is the same. Without granular access to relevant literature, LLMs fabricate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
+              turned out to be rediscoveries of results already in the literature. For example, 9/13 of
+              <a href="https://arxiv.org/abs/2602.10177" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline"> DeepMind Aletheia&rsquo;s</a>{' '}
+              meaningfully correct generated solutions were either classified as independent rediscoveries or identifications of results in existing literature.
+              It is also true that LLMs often fabricate incorrect arguments. In our experiments, Claude answered a research-level algebraic geometry question incorrectly on its own, but correctly when given access to TheoremSearch as a RAG tool.
             </p>
           </section>
 
@@ -204,7 +196,7 @@ export default function OverviewPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Retrieval Performance (Hit@10)</h3>
-                <div className="overflow-hidden rounded-md border border-slate-200">
+                <div className="overflow-hidden rounded-xs border border-slate-200">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
@@ -231,7 +223,7 @@ export default function OverviewPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Data Sources</h3>
-                <div className="overflow-hidden rounded-md border border-slate-200">
+                <div className="overflow-hidden rounded-xs border border-slate-200">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
@@ -273,12 +265,12 @@ export default function OverviewPage() {
             <SectionHeading>MCP Tool</SectionHeading>
             <p className="text-slate-600 leading-relaxed">
               TheoremSearch is available as an MCP tool for AI agents via a single{' '}
-              <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[13px] font-mono text-slate-700">theorem_search</code>{' '}
+              <code className="px-1.5 py-0.5 bg-slate-100 rounded-xs text-[13px] font-mono text-slate-700">theorem_search</code>{' '}
               tool.
             </p>
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-md px-4 py-3">
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xs px-4 py-3">
               <span className="text-[10px] font-bold tracking-widest text-slate-400 shrink-0">ENDPOINT</span>
-              <code className="text-sm font-mono text-brand">https://api.theoremsearch.com/mcp</code>
+              <code className="text-sm font-mono text-brand break-all min-w-0">https://api.theoremsearch.com/mcp</code>
             </div>
           </section>
 
@@ -286,49 +278,7 @@ export default function OverviewPage() {
 
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-50/50 mt-4">
-        <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
-
-          {/* Acknowledgements */}
-          <p className="text-slate-500 text-sm leading-relaxed">
-            We thank the{' '}
-            <a href="https://escience.washington.edu/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">UW eScience Institute</a>{' '}
-            for supporting this project, and{' '}
-            <a href="https://nebius.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Nebius</a>{' '}
-            for inference infrastructure. Our tool uses{' '}
-            <a href="https://tokenfactory.nebius.com/" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Nebius Token Factory</a>{' '}
-            with{' '}
-            <a href="https://tokenfactory.nebius.com/models?search=emb&model-id=Qwen/Qwen3-Embedding-8B" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Qwen3-Embedding-8B</a>{' '}
-            for query embedding. For questions or collaboration, reach out to{' '}
-            <a href="mailto:vilin@uw.edu" className="text-brand hover:underline">vilin@uw.edu</a>.
-          </p>
-
-          {/* Citation */}
-          <div className="space-y-3">
-            <p className="text-xs font-bold tracking-widest text-slate-400">CITATION</p>
-            <CodeBlock>{`@article{alexander2026semantic,
-  title  = {Semantic Search over 9 Million Mathematical Theorems},
-  author = {Alexander, Luke and Leonen, Eric and Szeto, Sophie and Remizov, Artemii
-            and Tejeda, Ignacio and Inchiostro, Giovanni and Ilin, Vasily},
-  journal= {arXiv preprint arXiv:2602.05216},
-  year   = {2026},
-  doi    = {10.48550/arXiv.2602.05216},
-  url    = {https://arxiv.org/abs/2602.05216}
-}`}</CodeBlock>
-          </div>
-
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
-            <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
-            <div className="flex items-center gap-4">
-              <Link href="/privacy" className="hover:text-brand transition-colors">Privacy</Link>
-              <Link href="/improve" className="hover:text-brand transition-colors">Help us improve</Link>
-              <a href="https://github.com/uw-math-ai" target="_blank" rel="noopener noreferrer" className="hover:text-brand transition-colors">GitHub</a>
-            </div>
-          </div>
-
-        </div>
-      </footer>
+      <SiteFooter />
 
     </div>
   );

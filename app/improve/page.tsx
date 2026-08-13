@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ThumbsUp, ThumbsDown, Flag } from 'lucide-react';
+import { SiteFooter } from '@/src/components/SiteFooter';
 
 export const metadata = { title: 'Help us Improve — TheoremSearch' };
 
@@ -38,7 +39,7 @@ export default function ImprovePage() {
             Every search result has a pair of feedback buttons in the top-right corner of its card:
           </p>
           <div className="flex flex-col gap-3">
-            <div className="flex items-start gap-4 bg-white border border-slate-200 rounded px-4 py-3.5">
+            <div className="flex items-start gap-4 bg-white border border-slate-200 rounded-xs px-4 py-3.5">
               <div className="p-1.5 text-brand mt-0.5">
                 <ThumbsUp size={16} />
               </div>
@@ -49,7 +50,7 @@ export default function ImprovePage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-4 bg-white border border-slate-200 rounded px-4 py-3.5">
+            <div className="flex items-start gap-4 bg-white border border-slate-200 rounded-xs px-4 py-3.5">
               <div className="p-1.5 text-red-500 mt-0.5">
                 <ThumbsDown size={16} />
               </div>
@@ -72,7 +73,7 @@ export default function ImprovePage() {
           <p className="text-sm text-slate-600 leading-relaxed">
             Each result also has a flag button. Use it to report problems with individual theorem entries:
           </p>
-          <div className="flex items-start gap-4 bg-white border border-slate-200 rounded px-4 py-3.5">
+          <div className="flex items-start gap-4 bg-white border border-slate-200 rounded-xs px-4 py-3.5">
             <div className="p-1.5 text-orange-400 mt-0.5">
               <Flag size={16} />
             </div>
@@ -101,18 +102,13 @@ export default function ImprovePage() {
 
         <div className="pt-2">
           <Link href="/search"
-            className="inline-block px-6 py-2.5 bg-brand text-white rounded-md font-semibold text-sm hover:bg-brand/90 transition-colors">
+            className="inline-block px-6 py-2.5 bg-brand text-white rounded-xs font-semibold text-sm hover:bg-brand/90 transition-colors">
             Start searching
           </Link>
         </div>
       </main>
 
-      <footer className="border-t border-slate-200 py-6 mt-8">
-        <div className="max-w-2xl mx-auto px-6 flex items-center justify-between text-[11px] text-slate-400">
-          <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
-          <Link href="/search" className="hover:text-brand transition-colors">← Back to search</Link>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

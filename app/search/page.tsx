@@ -200,11 +200,11 @@ export default function App() {
               className="flex items-center gap-3 shrink-0 hover:opacity-80 transition-opacity"
             >
               <Image
-                src="/math-ai-logo.jpg"
+                src="/math-ai-mark.svg"
                 alt="Math AI Lab"
                 width={40}
                 height={40}
-                className="rounded"
+                className="rounded-xs"
               />
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                 Theorem<span className="text-brand">Search</span>
@@ -220,7 +220,7 @@ export default function App() {
                 <input
                   type="text"
                   placeholder="Describe a result (e.g. The Jones polynomial is link invariant)"
-                  className={`w-full pl-9 py-3 bg-white border border-slate-200 rounded focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-xs ${inputFocused ? 'pr-10' : 'pr-3'}`}
+                  className={`w-full pl-9 py-3 bg-white border border-slate-200 rounded-xs focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-xs ${inputFocused ? 'pr-10' : 'pr-3'}`}
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
                   maxLength={1000}
@@ -233,7 +233,7 @@ export default function App() {
                     <button
                       onMouseDown={e => { e.preventDefault(); handleSearch(); }}
                       disabled={!searchInput.trim() || isSearching}
-                      className="p-1.5 bg-brand text-white rounded disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="p-1.5 bg-brand text-white rounded-xs disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
                       <Search size={13} />
                     </button>
@@ -242,7 +242,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => setShowFilters(v => !v)}
-                className={`self-start p-3 border rounded flex items-center gap-1 text-xs font-semibold transition-colors ${
+                className={`self-start p-3 border rounded-xs flex items-center gap-1 text-xs font-semibold transition-colors ${
                   showFilters || activeCount > 0
                     ? 'bg-brand text-white border-brand'
                     : 'bg-white text-slate-600 border-slate-200'
@@ -266,7 +266,7 @@ export default function App() {
                 <input
                   type="text"
                   placeholder="Describe a result (e.g. The Jones polynomial is link invariant)"
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-base"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xs focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all outline-none text-base"
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
                   maxLength={1000}
@@ -275,7 +275,7 @@ export default function App() {
               </div>
               <button
                 onClick={() => setShowFilters(v => !v)}
-                className={`shrink-0 px-3 py-3 border rounded flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                className={`shrink-0 px-3 py-3 border rounded-xs flex items-center gap-1.5 text-xs font-semibold transition-colors ${
                   showFilters || activeCount > 0
                     ? 'bg-brand text-white border-brand'
                     : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
@@ -292,7 +292,7 @@ export default function App() {
               <button
                 onClick={handleSearch}
                 disabled={!searchInput.trim() || isSearching}
-                className="shrink-0 px-3 py-3 bg-brand text-white border border-brand rounded text-xs font-semibold hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="shrink-0 px-3 py-3 bg-brand text-white border border-brand rounded-xs text-xs font-semibold hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Search
               </button>
@@ -331,7 +331,7 @@ export default function App() {
           {!activeQuery && !isSearching && (
             <div className="text-center py-24">
               <p className="text-slate-400 text-sm">
-                Enter a query above and press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-xs font-mono">Enter</kbd> or click <strong>Search</strong>.
+                Enter a query above and press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded-xs text-xs font-mono">Enter</kbd> or click <strong>Search</strong>.
               </p>
               {metadata && (
                 <p className="text-slate-400 text-xs mt-2">
@@ -348,7 +348,7 @@ export default function App() {
           )}
 
           {searchError && !isSearching && (
-            <div className="text-center py-16 bg-red-50 border border-red-200 rounded">
+            <div className="text-center py-16 bg-red-50 border border-red-200 rounded-xs">
               <p className="text-red-600 text-sm font-medium">Search failed</p>
               <p className="text-red-400 text-xs mt-1">{searchError}</p>
             </div>
@@ -372,7 +372,7 @@ export default function App() {
                     <TheoremCard key={t.slogan_id} theorem={t} activeQuery={activeQuery} filters={filters} />
                   ))
                 ) : (
-                  <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded">
+                  <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-xs">
                     <p className="text-slate-400">No theorems found for &ldquo;{activeQuery}&rdquo;.</p>
                   </div>
                 )}
@@ -382,7 +382,7 @@ export default function App() {
               {totalPages > 1 && (
                 <div className="flex justify-center mt-12 gap-2">
                   <button
-                    className="px-4 py-2 bg-white border border-slate-200 rounded text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-white border border-slate-200 rounded-xs text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
                   >
@@ -392,7 +392,7 @@ export default function App() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`px-4 py-2 rounded text-sm font-medium transition-all ${
+                      className={`px-4 py-2 rounded-xs text-sm font-medium transition-all ${
                         currentPage === page
                           ? 'bg-brand text-white'
                           : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -402,7 +402,7 @@ export default function App() {
                     </button>
                   ))}
                   <button
-                    className="px-4 py-2 bg-white border border-slate-200 rounded text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-white border border-slate-200 rounded-xs text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
                   >
@@ -415,58 +415,6 @@ export default function App() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-12 mt-20">
-        <div className="max-w-5xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <Link
-              href="/"
-              className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity"
-            >
-              <Image
-                src="/math-ai-logo.jpg"
-                alt="Math AI Lab"
-                width={24}
-                height={24}
-                className="rounded"
-              />
-              <span className="font-bold text-slate-900">Theorem<span className="text-brand">Search</span></span>
-            </Link>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              An open-source semantic search tool that accelerates math research.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">Data</h4>
-            <ul className="space-y-2 text-sm text-slate-600">
-              <li><a href="https://huggingface.co/uw-math-ai/datasets" className="hover:text-brand transition-colors">Download</a></li>
-              <li><a href="/docs" className="hover:text-brand transition-colors">API</a></li>
-              <li><a href="https://github.com/uw-math-ai/arXiTeX" className="hover:text-brand transition-colors">arXiTeX</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">Research</h4>
-            <ul className="space-y-2 text-sm text-slate-600">
-              <li><Link href="/" className="hover:text-brand transition-colors">Overview</Link></li>
-              <li><a href="https://arxiv.org/abs/2602.05216" className="hover:text-brand transition-colors">Preprint</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-[10px] font-bold text-slate-400 tracking-wider mb-4">About</h4>
-            <ul className="space-y-2 text-sm text-slate-600">
-              <li><a href="https://sites.math.washington.edu/ai/" target="_blank" className="hover:text-brand transition-colors">UW Math AI Lab</a></li>
-              <li><a href="mailto:vilin@uw.edu" className="hover:text-brand transition-colors">Contact</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-5xl mx-auto px-4 mt-12 pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-slate-400">
-          <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
-          <div className="flex items-center gap-6">
-            <a href="/privacy" className="hover:text-slate-600">Privacy Policy</a>
-            <a href="/improve" className="hover:text-slate-600">Help us Improve</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

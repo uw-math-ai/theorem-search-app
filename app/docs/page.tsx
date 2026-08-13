@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import { SiteFooter } from '@/src/components/SiteFooter';
 
 export const metadata = { title: 'API Docs — TheoremSearch' };
 
@@ -12,7 +13,7 @@ function SectionHeading({ badge, children }: { badge?: string; children: ReactNo
   return (
     <div className="flex items-center gap-3">
       {badge && (
-        <span className="px-2 py-0.5 bg-brand text-white text-[10px] font-bold rounded font-mono shrink-0">
+        <span className="px-2 py-0.5 bg-brand text-white text-[10px] font-bold rounded-xs font-mono shrink-0">
           {badge}
         </span>
       )}
@@ -27,7 +28,7 @@ function Label({ children }: { children: ReactNode }) {
 
 function Code({ children }: { children: ReactNode }) {
   return (
-    <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[13px] font-mono text-slate-700">
+    <code className="px-1.5 py-0.5 bg-slate-100 rounded-xs text-[13px] font-mono text-slate-700">
       {children}
     </code>
   );
@@ -35,7 +36,7 @@ function Code({ children }: { children: ReactNode }) {
 
 function CodeBlock({ children }: { children: string }) {
   return (
-    <pre className="bg-slate-900 text-slate-100 rounded-xl p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
+    <pre className="bg-slate-900 text-slate-100 rounded-xs p-5 text-sm overflow-x-auto leading-relaxed font-mono whitespace-pre">
       <code>{children}</code>
     </pre>
   );
@@ -45,7 +46,7 @@ function ParamTable({ rows }: {
   rows: { name: string; type: string; required?: boolean; default?: string; description: string }[];
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className="overflow-x-auto rounded-xs border border-slate-200">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200">
@@ -84,7 +85,7 @@ function Endpoint({ method, path }: { method: string; path: string }) {
   };
   return (
     <div className="flex items-center gap-2 font-mono text-sm">
-      <span className={`px-2 py-0.5 rounded text-xs font-bold ${colors[method] ?? 'bg-slate-100 text-slate-600'}`}>
+      <span className={`px-2 py-0.5 rounded-xs text-xs font-bold ${colors[method] ?? 'bg-slate-100 text-slate-600'}`}>
         {method}
       </span>
       <span className="text-slate-700">{path}</span>
@@ -98,6 +99,9 @@ const NAV = [
   { href: '#graph', label: 'GET /graph' },
   { href: '#paper-search', label: 'GET /paper-search' },
   { href: '#paper-links', label: 'GET /paper-links' },
+  { href: '#graph-embedding', label: 'GET /graph/embedding' },
+  { href: '#graph-statement', label: 'GET /graph/statement' },
+  { href: '#graph-paper', label: 'GET /graph/paper' },
   { href: '#mcp', label: 'MCP' },
 ];
 
@@ -108,7 +112,7 @@ export default function DocsPage() {
       <header className="sticky top-0 z-10 bg-white border-b border-slate-200 px-6 py-3.5">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <Image src="/math-ai-logo.jpg" alt="Math AI Lab" width={26} height={26} className="rounded-lg" />
+            <Image src="/math-ai-mark.svg" alt="Math AI Lab" width={26} height={26} className="rounded-xs" />
             <span className="font-bold text-slate-900">
               Theorem<span className="text-brand">Search</span>
             </span>
@@ -143,7 +147,7 @@ export default function DocsPage() {
             <p className="text-slate-600 leading-relaxed">
               TheoremSearch exposes a REST API for semantic theorem search, dependency graph exploration, and paper lookup. All endpoints are available at the base URL below.
             </p>
-            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xs px-4 py-3">
               <Label>BASE URL</Label>
               <code className="text-sm font-mono text-brand">https://api.theoremsearch.com</code>
             </div>
@@ -227,7 +231,7 @@ export default function DocsPage() {
             <SectionHeading badge="GET">Graph</SectionHeading>
             <Endpoint method="GET" path="/graph?external_id={id}" />
             <p className="text-slate-600 text-sm leading-relaxed">
-              Returns the full dependency graph for a paper — all its formal statements, and the directed edges showing which statements depend on which (including cross-paper citations).
+              Returns the full dependency graph for a paper, including its formal statements and directed edges.
             </p>
 
             <div>
@@ -327,7 +331,7 @@ export default function DocsPage() {
             <SectionHeading badge="GET">Paper Links</SectionHeading>
             <Endpoint method="GET" path="/paper-links" />
             <p className="text-slate-600 text-sm leading-relaxed">
-              Returns all directed citation edges among papers in the graph dataset as source → target pairs of paper UUIDs. Useful for constructing citation network visualizations.
+              Returns all directed citation edges among papers in the graph dataset as (source, target) pairs of paper UUIDs.
             </p>
 
             <div>
@@ -347,6 +351,168 @@ export default function DocsPage() {
 
           <Divider />
 
+          {/* GET /graph/embedding */}
+          <Section id="graph-embedding">
+            <SectionHeading badge="GET">Graph Embedding Search</SectionHeading>
+            <Endpoint method="GET" path="/graph/embedding" />
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Peform semantic search over the entire TheoremGraph corpus, formal and informal statements. Embeds the query with{' '}
+              <Code>Qwen3-Embedding-8B</Code> and returns statements ranked by cosine similarity.
+            </p>
+
+            <div>
+              <Label>QUERY PARAMETERS</Label>
+              <ParamTable rows={[
+                { name: 'query',     type: 'string',  required: true,  description: 'Natural-language description of the mathematical result to find.' },
+                { name: 'n_results', type: 'integer', default: '10',   description: 'Number of results to return.' },
+                { name: 'formality', type: 'string',  default: '"both"', description: 'Filter by corpus: "informal" (arXiv), "formal" (Lean), or "both".' },
+              ]} />
+            </div>
+
+            <div>
+              <Label>EXAMPLE</Label>
+              <CodeBlock>{`curl "https://api.theoremsearch.com/graph/embedding?query=fundamental+theorem+of+calculus&n_results=5"`}</CodeBlock>
+            </div>
+
+            <div>
+              <Label>RESPONSE</Label>
+              <CodeBlock>{`{
+  "results": [
+    {
+      "statement_id": "uuid",
+      "name": "Theorem 1.1",
+      "body": "If f is continuous on [a, b] and differentiable on (a, b)...",
+      "slogan": "Every continuous function on a closed interval has an antiderivative.",
+      "formality": "informal",
+      "similarity": 0.943,
+      "paper": {
+        "title": "Real Analysis Notes",
+        "external_id": "2301.00001",
+        "source": "arXiv"
+      }
+    }
+  ]
+}`}</CodeBlock>
+            </div>
+          </Section>
+
+          <Divider />
+
+          {/* GET /graph/statement/{id} */}
+          <Section id="graph-statement">
+            <SectionHeading badge="GET">Graph Statement</SectionHeading>
+            <Endpoint method="GET" path="/graph/statement/{'{statement_id}'}" />
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Returns a statement and its direct dependency neighborhood. Use the{' '}
+              <Code>direction</Code> parameter to walk outward along dependency edges, and{' '}
+              <Code>formality</Code> to select informal or formal edges.
+            </p>
+
+            <div>
+              <Label>PATH PARAMETER</Label>
+              <ParamTable rows={[
+                { name: 'statement_id', type: 'string', required: true, description: 'UUID of the statement, obtained from /graph/embedding or /graph/paper.' },
+              ]} />
+            </div>
+
+            <div>
+              <Label>QUERY PARAMETERS</Label>
+              <ParamTable rows={[
+                { name: 'direction', type: 'string', default: '"both"',     description: '"src" (what this statement uses), "dep" (what uses this statement), or "both".' },
+                { name: 'formality', type: 'string', default: '"both"',     description: '"informal", "formal", or "both".' },
+              ]} />
+            </div>
+
+            <div>
+              <Label>EXAMPLE</Label>
+              <CodeBlock>{`curl "https://api.theoremsearch.com/graph/statement/<statement_id>?direction=both&formality=formal"`}</CodeBlock>
+            </div>
+
+            <div>
+              <Label>RESPONSE</Label>
+              <CodeBlock>{`{
+  "statement": {
+    "statement_id": "uuid",
+    "name": "Theorem 1.1",
+    "body": "If f is continuous on [a, b]...",
+    "slogan": "...",
+    "formality": "formal"
+  },
+  "neighbors": [
+    {
+      "statement_id": "uuid",
+      "name": "Lemma 2.3",
+      "direction": "src",
+      "edge_type": "proof",
+      "formality": "formal"
+    }
+  ]
+}`}</CodeBlock>
+            </div>
+          </Section>
+
+          <Divider />
+
+          {/* GET /graph/paper/{id} */}
+          <Section id="graph-paper">
+            <SectionHeading badge="GET">Graph Paper</SectionHeading>
+            <Endpoint method="GET" path="/graph/paper/{'{paper_id}'}" />
+            <p className="text-slate-600 text-sm leading-relaxed">
+              Returns all statements and dependency edges for an arXiv paper or Lean repository.
+              Accepts either a UUID path parameter or an{' '}
+              <Code>external_id</Code> query parameter for lookup by arXiv ID or repo slug.
+            </p>
+
+            <div>
+              <Label>PATH PARAMETER (OR QUERY PARAMETER)</Label>
+              <ParamTable rows={[
+                { name: 'paper_id',    type: 'string', required: false, description: 'UUID of the paper (path parameter).' },
+                { name: 'external_id', type: 'string', required: false, description: 'arXiv ID or Lean repo slug, e.g. 2301.00001 or leanprover-community/mathlib4.' },
+              ]} />
+            </div>
+
+            <div>
+              <Label>EXAMPLE</Label>
+              <CodeBlock>{`curl "https://api.theoremsearch.com/graph/paper?external_id=2301.00001"`}</CodeBlock>
+            </div>
+
+            <div>
+              <Label>RESPONSE</Label>
+              <CodeBlock>{`{
+  "paper": {
+    "paper_id": "uuid",
+    "title": "Real Analysis Notes",
+    "external_id": "2301.00001",
+    "source": "arXiv"
+  },
+  "statements": [
+    {
+      "statement_id": "uuid",
+      "name": "Theorem 1.1",
+      "body": "If f is continuous on [a, b]...",
+      "slogan": "...",
+      "formality": "informal"
+    }
+  ],
+  "dependencies": [
+    {
+      "src_statement_id": "uuid",
+      "dep_statement_id": "uuid",
+      "edge_type": "proof",
+      "formality": "informal"
+    }
+  ]
+}`}</CodeBlock>
+            </div>
+
+            <p className="text-slate-500 text-xs leading-relaxed">
+              Tip: search with <Code>/graph/embedding</Code> to get a{' '}
+              <Code>statement_id</Code>, then walk its neighborhood with <Code>/graph/statement/{'{id}'}</Code>.
+            </p>
+          </Section>
+
+          <Divider />
+
           {/* MCP */}
           <Section id="mcp">
             <SectionHeading>MCP</SectionHeading>
@@ -356,9 +522,9 @@ export default function DocsPage() {
               <a href="#search" className="text-brand hover:underline">POST /search</a>.
             </p>
 
-            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-xs px-4 py-3">
               <span className="text-[10px] font-bold tracking-widest text-slate-400 shrink-0">ENDPOINT</span>
-              <code className="text-sm font-mono text-brand">https://api.theoremsearch.com/mcp</code>
+              <code className="text-sm font-mono text-brand break-all min-w-0">https://api.theoremsearch.com/mcp</code>
             </div>
 
             <div>
@@ -404,13 +570,7 @@ export default function DocsPage() {
         </main>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 py-6 mt-8">
-        <div className="max-w-5xl mx-auto px-6 flex items-center justify-between text-[11px] text-slate-400">
-          <p>© {new Date().getFullYear()} UW Math AI Lab.</p>
-          <Link href="/search" className="hover:text-brand transition-colors">← Back to search</Link>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
