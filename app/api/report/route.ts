@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { slogan_id, reasons, other_note, query, url } = body;
+    const { statement_id, reasons, other_note, query, url } = body;
 
-    if (typeof slogan_id !== 'string' || !slogan_id || slogan_id.length > 200) {
-      return NextResponse.json({ error: 'Invalid slogan_id' }, { status: 400 });
+    if (typeof statement_id !== 'string' || !statement_id || statement_id.length > 200) {
+      return NextResponse.json({ error: 'Invalid statement_id' }, { status: 400 });
     }
     if (!Array.isArray(reasons) || reasons.length === 0) {
       return NextResponse.json({ error: 'At least one reason is required' }, { status: 400 });
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No valid reasons provided' }, { status: 400 });
     }
 
-    if (hasReported(ip, slogan_id)) {
+    if (hasReported(ip, statement_id)) {
       return NextResponse.json({ error: 'Already reported' }, { status: 409 });
     }
 
@@ -50,10 +50,12 @@ export async function POST(req: NextRequest) {
       : null;
 
     const pool = await getPool();
+    // theorem_reports.slogan_id predates the v2 data; it now holds the v2
+    // statement UUID (v1 slogan ids in older rows are numeric).
     await pool.query(
       'INSERT INTO theorem_reports (slogan_id, reasons, other_note, query, url) VALUES ($1, $2, $3, $4, $5)',
       [
-        slogan_id,
+        statement_id,
         sanitizedReasons,
         sanitizedNote,
         sanitizeText(query, 1000),
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest) {
       ]
     );
 
-    recordReport(ip, slogan_id);
+    recordReport(ip, statement_id);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[/api/report]', err);

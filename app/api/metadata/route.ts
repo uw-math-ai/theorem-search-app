@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
+import { getPool, V2_DB } from '@/lib/db';
 
 const TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
@@ -19,7 +19,6 @@ interface CacheEntry {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var _metaCache: CacheEntry | undefined;
 }
 
@@ -29,20 +28,20 @@ async function fetchMetadata(): Promise<Metadata> {
     return global._metaCache.data;
   }
 
-  const pool = await getPool();
+  // Materialized views defined in TheoremSearch rds/helpers/search_metadata.sql.
+  const pool = await getPool(V2_DB);
 
-  const [sourcesRes, authorsRes, tagsRes, countRes, yearRes, citationRes] = await Promise.all([
-    pool.query('SELECT sources FROM mv_sources'),
-    pool.query('SELECT source, authors FROM mv_authors_by_source'),
-    pool.query('SELECT source, tags FROM mv_tags_by_source'),
-    pool.query('SELECT cnt FROM mv_theorem_count'),
+  const [statsRes, authorsRes, tagsRes] = await Promise.all([
     pool.query(
-      'SELECT MIN(year) AS year_min, MAX(year) AS year_max FROM theorem_search_qwen8b WHERE year IS NOT NULL'
+      'SELECT source, informal_statements, formal_statements, year_min, year_max, citation_max FROM mv_search_source_stats ORDER BY source'
     ),
-    pool.query(
-      'SELECT MAX(citations) AS citation_max FROM theorem_search_qwen8b WHERE citations IS NOT NULL'
-    ),
+    pool.query('SELECT source, authors FROM mv_search_authors_by_source'),
+    pool.query('SELECT source, tags FROM mv_search_tags_by_source'),
   ]);
+  const stats = statsRes.rows;
+  const known = (xs: (number | null)[]) => xs.filter((x): x is number => x != null).map(Number);
+  const minOf = (xs: (number | null)[], fallback: number) => known(xs).length ? Math.min(...known(xs)) : fallback;
+  const maxOf = (xs: (number | null)[], fallback: number) => known(xs).length ? Math.max(...known(xs)) : fallback;
 
   const authorsPerSource: Record<string, string[]> = {};
   for (const row of authorsRes.rows) {
@@ -55,13 +54,13 @@ async function fetchMetadata(): Promise<Metadata> {
   }
 
   const data: Metadata = {
-    sources: sourcesRes.rows[0]?.sources ?? [],
+    sources: stats.map(r => r.source),
     authorsPerSource,
     tagsPerSource,
-    theoremCount: Number(countRes.rows[0]?.cnt ?? 0),
-    yearMin: Number(yearRes.rows[0]?.year_min ?? 1991),
-    yearMax: Number(yearRes.rows[0]?.year_max ?? new Date().getFullYear()),
-    citationMax: Number(citationRes.rows[0]?.citation_max ?? 10000),
+    theoremCount: stats.reduce((n, r) => n + Number(r.informal_statements) + Number(r.formal_statements), 0),
+    yearMin: minOf(stats.map(r => r.year_min), 1991),
+    yearMax: maxOf(stats.map(r => r.year_max), new Date().getFullYear()),
+    citationMax: maxOf(stats.map(r => r.citation_max), 10000),
   };
 
   global._metaCache = { data, expiresAt: now + TTL_MS };

@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
       types: (Array.isArray(filters.types) ? filters.types : []).join(', '),
       tags: (Array.isArray(filters.categories) ? filters.categories : []).join(', '),
       sources: sources.join(', '),
+      formality: typeof filters.formality === 'string' ? filters.formality : 'informal',
       paper_filter: sanitizeText(filters.paperFilter, 500) ?? '',
       year_range: `${filters.yearMin ?? ''}–${filters.yearMax ?? ''}`,
       citation_range: `${filters.citationMin ?? 0}–${filters.citationMax ?? ''}`,

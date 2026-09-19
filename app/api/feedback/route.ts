@@ -18,19 +18,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { vote, slogan_id, query, url, theorem_name, authors, filters = {} } = body;
+    const { vote, statement_id, query, url, theorem_name, authors, filters = {} } = body;
 
     if (vote !== 1 && vote !== -1) {
       return NextResponse.json({ error: 'Invalid vote' }, { status: 400 });
     }
-    if (typeof slogan_id !== 'string' || !slogan_id || slogan_id.length > 200) {
-      return NextResponse.json({ error: 'Invalid slogan_id' }, { status: 400 });
+    if (typeof statement_id !== 'string' || !statement_id || statement_id.length > 200) {
+      return NextResponse.json({ error: 'Invalid statement_id' }, { status: 400 });
     }
     if (typeof query !== 'string' || !query.trim() || query.length > 1000) {
       return NextResponse.json({ error: 'Invalid query' }, { status: 400 });
     }
 
-    if (hasVoted(ip, slogan_id)) {
+    if (hasVoted(ip, statement_id)) {
       return NextResponse.json({ error: 'Already voted' }, { status: 409 });
     }
 
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       ]
     );
 
-    recordVote(ip, slogan_id);
+    recordVote(ip, statement_id);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[/api/feedback]', err);

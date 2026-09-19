@@ -5,8 +5,11 @@ import { X, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cleanAuthors } from '../lib/latexClean';
 
+export type Formality = 'informal' | 'formal' | 'both';
+
 export interface Filters {
   sources: string[];
+  formality: Formality;
   types: string[];
   authors: string[];
   categories: string[];
@@ -77,6 +80,12 @@ function PillGroup({
     </div>
   );
 }
+
+const FORMALITY_OPTIONS: { value: Formality; label: string }[] = [
+  { value: 'informal', label: 'Informal' },
+  { value: 'formal', label: 'Formal (Lean)' },
+  { value: 'both', label: 'Both' },
+];
 
 const VISIBLE_LIMIT = 12;
 
@@ -287,12 +296,32 @@ export default function FilterPanel({
 
           {/* Main filters: Source, Category, Results per Search */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            <PillGroup
-              label="SOURCE"
-              options={availableSources}
-              selected={filters.sources}
-              onChange={sources => setFilters({ ...filters, sources })}
-            />
+            <div className="space-y-4">
+              <PillGroup
+                label="SOURCE"
+                options={availableSources}
+                selected={filters.sources}
+                onChange={sources => setFilters({ ...filters, sources })}
+              />
+              <div>
+                <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">STATEMENTS</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {FORMALITY_OPTIONS.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => setFilters({ ...filters, formality: value })}
+                      className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                        filters.formality === value
+                          ? 'bg-brand text-white border-brand'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-brand/50 hover:text-brand'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
             <SearchablePillGroup
               label="CATEGORY"
               options={availableCategories}

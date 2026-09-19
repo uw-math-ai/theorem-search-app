@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Theorem } from '../data/mockTheorems';
+import type { Theorem } from '../types/theorem';
 import { Filters } from './FilterPanel';
 import { ThumbsUp, ThumbsDown, User, BookOpen, Flag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -48,7 +48,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slogan_id: theorem.slogan_id,
+          statement_id: theorem.statement_id,
           reasons: selectedReasons,
           other_note: selectedReasons.includes('Other') ? otherText.trim() : null,
           query: activeQuery,
@@ -69,7 +69,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vote: v,
-          slogan_id: theorem.slogan_id,
+          statement_id: theorem.statement_id,
           query: activeQuery,
           url: theorem.link,
           theorem_name: theorem.theorem_name,

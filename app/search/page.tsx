@@ -4,13 +4,16 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search, Filter, Info, Loader2 } from 'lucide-react';
-import { Theorem } from '@/src/data/mockTheorems';
+import type { Theorem } from '@/src/types/theorem';
 import { TheoremCard } from '@/src/components/TheoremCard';
 import FilterPanel, { Filters } from '@/src/components/FilterPanel';
 
-// Source-level filter capabilities (mirrors SOURCE_FILTERS in utils.py)
+// Source-level filter capabilities: which paper metadata each source has.
 const SOURCE_FILTERS: Record<string, { authors: boolean; tags: boolean; year: boolean }> = {
   'arXiv':                       { authors: true,  tags: true,  year: true  },
+  'Lean Community':              { authors: true,  tags: false, year: false },
+  'Lean Repo':                   { authors: false, tags: false, year: false },
+  'Lean Graph':                  { authors: false, tags: false, year: false },
   'Stacks Project':              { authors: false, tags: true,  year: false },
   'ProofWiki':                   { authors: false, tags: false, year: false },
   'An Infinitely Large Napkin':  { authors: false, tags: false, year: false },
@@ -31,6 +34,7 @@ function makeDefaultFilters(
 ): Filters {
   return {
     sources: ['arXiv'],
+    formality: 'informal',
     types: [],
     authors: [],
     categories: [],
@@ -53,6 +57,7 @@ function countActiveFilters(f: Filters, yearMin: number, yearMax: number, citati
     f.sources.length !== DEFAULT_SOURCES.length ||
     f.sources.some(s => !DEFAULT_SOURCES.includes(s));
   if (sourcesChanged) n++;
+  if (f.formality !== 'informal') n++;
   if (f.types.length) n++;
   if (f.authors.length) n++;
   if (f.categories.length) n++;
@@ -72,6 +77,18 @@ interface Metadata {
   yearMin: number;
   yearMax: number;
   citationMax: number;
+}
+
+// Range filters left at their full extent are no-ops; leave them out so the
+// search API doesn't treat them as active (filtered searches take a slower path).
+function searchFilters(f: Filters, m: Metadata | null) {
+  if (!m) return f;
+  return {
+    ...f,
+    yearMin: f.yearMin > m.yearMin ? f.yearMin : undefined,
+    yearMax: f.yearMax < m.yearMax ? f.yearMax : undefined,
+    citationMax: f.citationMax < m.citationMax ? f.citationMax : undefined,
+  };
 }
 
 export default function App() {
@@ -112,7 +129,7 @@ export default function App() {
       const res = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, filters: f }),
+        body: JSON.stringify({ query, filters: searchFilters(f, metadata) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Search failed');
@@ -128,7 +145,7 @@ export default function App() {
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [metadata]);
 
   useEffect(() => {
     if (activeQuery) doSearch(activeQuery, filters);
@@ -369,7 +386,7 @@ export default function App() {
               <div className="grid gap-4">
                 {paginatedResults.length > 0 ? (
                   paginatedResults.map(t => (
-                    <TheoremCard key={t.slogan_id} theorem={t} activeQuery={activeQuery} filters={filters} />
+                    <TheoremCard key={t.statement_id} theorem={t} activeQuery={activeQuery} filters={filters} />
                   ))
                 ) : (
                   <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-xs">
@@ -414,6 +431,7 @@ export default function App() {
           )}
         </section>
       </main>
+
 
     </div>
   );
