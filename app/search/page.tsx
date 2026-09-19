@@ -7,6 +7,7 @@ import { Search, Filter, Info, Loader2 } from 'lucide-react';
 import type { Theorem } from '@/src/types/theorem';
 import { TheoremCard } from '@/src/components/TheoremCard';
 import FilterPanel, { Filters } from '@/src/components/FilterPanel';
+import GraphPeek from '@/src/components/GraphPeek';
 
 // Source-level filter capabilities: which paper metadata each source has.
 const SOURCE_FILTERS: Record<string, { authors: boolean; tags: boolean; year: boolean }> = {
@@ -103,6 +104,8 @@ export default function App() {
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const [metadata, setMetadata] = useState<Metadata | null>(null);
+  // Result shown in the corner dependency graph; follows the top result by default.
+  const [graphId, setGraphId] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = filters.topK;
@@ -134,6 +137,7 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Search failed');
       setResults(data.results);
+      setGraphId(data.results?.[0]?.statement_id ?? null);
       // Log query fire-and-forget
       fetch('/api/log-query', {
         method: 'POST',
@@ -386,7 +390,14 @@ export default function App() {
               <div className="grid gap-4">
                 {paginatedResults.length > 0 ? (
                   paginatedResults.map(t => (
-                    <TheoremCard key={t.statement_id} theorem={t} activeQuery={activeQuery} filters={filters} />
+                    <TheoremCard
+                      key={t.statement_id}
+                      theorem={t}
+                      activeQuery={activeQuery}
+                      filters={filters}
+                      inGraph={t.statement_id === graphId}
+                      onShowGraph={() => setGraphId(t.statement_id)}
+                    />
                   ))
                 ) : (
                   <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-xs">
@@ -432,7 +443,7 @@ export default function App() {
         </section>
       </main>
 
-
+      <GraphPeek statementId={results?.length ? graphId : null} />
     </div>
   );
 }

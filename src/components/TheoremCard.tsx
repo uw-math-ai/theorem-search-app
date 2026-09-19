@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import type { Theorem } from '../types/theorem';
 import { Filters } from './FilterPanel';
-import { ThumbsUp, ThumbsDown, User, BookOpen, Flag } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, User, BookOpen, Flag, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MathJax } from 'better-react-mathjax';
 import { cleanLatexForDisplay, cleanTheoremName, cleanAuthors } from '../lib/latexClean';
@@ -12,9 +12,12 @@ interface TheoremCardProps {
   theorem: Theorem;
   activeQuery: string;
   filters: Filters;
+  /** Whether this result is the one shown in the corner dependency graph. */
+  inGraph?: boolean;
+  onShowGraph?: () => void;
 }
 
-export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, activeQuery, filters }) => {
+export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, activeQuery, filters, inGraph = false, onShowGraph }) => {
   const [showSlogan, setShowSlogan] = useState(true);
   const [showLatex, setShowLatex] = useState(false);
   const [vote, setVote] = useState<1 | -1 | null>(null);
@@ -148,6 +151,21 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
                 Precise Statement
               </button>
             </div>
+
+            {onShowGraph && (
+              <button
+                onClick={onShowGraph}
+                title="Show in dependency graph"
+                className={`hidden md:flex items-center gap-1 px-2 py-1 border rounded-xs text-[9px] font-bold transition-all ${
+                  inGraph
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-white text-slate-500 border-slate-200 hover:text-brand'
+                }`}
+              >
+                <Network size={10} />
+                Graph
+              </button>
+            )}
 
             <a
               href={theorem.link}
