@@ -6,7 +6,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const { searchParams } = new URL(req.url);
   const upstream = new URL(`${UPSTREAM}/graph/statement/${encodeURIComponent(id)}`);
-  searchParams.forEach((v, k) => upstream.searchParams.set(k, v));
+  searchParams.forEach((v, k) => upstream.searchParams.append(k, v));
 
   const r = await fetch(upstream.toString());
   const data = await r.json();
