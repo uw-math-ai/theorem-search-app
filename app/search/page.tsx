@@ -105,7 +105,7 @@ export default function App() {
 
   const [metadata, setMetadata] = useState<Metadata | null>(null);
   // Result shown in the corner dependency graph; follows the top result by default.
-  const [graphId, setGraphId] = useState<string | null>(null);
+  const [graphTarget, setGraphTarget] = useState<Theorem | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = filters.topK;
@@ -137,7 +137,7 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Search failed');
       setResults(data.results);
-      setGraphId(data.results?.[0]?.statement_id ?? null);
+      setGraphTarget(data.results?.[0] ?? null);
       // Log query fire-and-forget
       fetch('/api/log-query', {
         method: 'POST',
@@ -395,8 +395,8 @@ export default function App() {
                       theorem={t}
                       activeQuery={activeQuery}
                       filters={filters}
-                      inGraph={t.statement_id === graphId}
-                      onShowGraph={() => setGraphId(t.statement_id)}
+                      inGraph={t.statement_id === graphTarget?.statement_id}
+                      onShowGraph={() => setGraphTarget(t)}
                     />
                   ))
                 ) : (
@@ -443,7 +443,10 @@ export default function App() {
         </section>
       </main>
 
-      <GraphPeek statementId={results?.length ? graphId : null} />
+      <GraphPeek
+        statementId={results?.length ? graphTarget?.statement_id ?? null : null}
+        formality={graphTarget?.formality === 'formal' ? 'formal' : 'informal'}
+      />
     </div>
   );
 }

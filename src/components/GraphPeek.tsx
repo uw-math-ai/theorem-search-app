@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink, Loader2, Network } from 'lucide-react';
-import { apiStatement, edgeColor, type Neighbor, type Statement } from '../lib/graphApi';
+import { apiStatement, edgeColor, type Formality, type Neighbor, type Statement } from '../lib/graphApi';
 
 const W = 320;
 const H = 210;
@@ -25,6 +25,7 @@ const trunc = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…
 interface GraphPeekProps {
   /** Statement to center on; changes when the user picks another result. */
   statementId: string | null;
+  formality?: Formality;
 }
 
 // The panel starts expanded only where the results column leaves room for it.
@@ -43,7 +44,7 @@ interface Loaded {
 }
 
 /** Compact dependency-graph view of one search result, pinned to the page corner. */
-export default function GraphPeek({ statementId }: GraphPeekProps) {
+export default function GraphPeek({ statementId, formality = 'informal' }: GraphPeekProps) {
   const wide = useSyncExternalStore(subscribeWide, isWide, () => false);
   const [toggled, setToggled] = useState<boolean | null>(null);
   const open = toggled ?? wide;
@@ -63,7 +64,7 @@ export default function GraphPeek({ statementId }: GraphPeekProps) {
   useEffect(() => {
     if (!currentId || !open) return;
     let cancelled = false;
-    apiStatement(currentId)
+    apiStatement(currentId, formality)
       .then(({ statement, neighbors }) => {
         if (!cancelled) setLoaded({ id: currentId, center: statement, neighbors });
       })
@@ -71,7 +72,7 @@ export default function GraphPeek({ statementId }: GraphPeekProps) {
         if (!cancelled) setLoaded({ id: currentId, center: null, neighbors: [] });
       });
     return () => { cancelled = true; };
-  }, [currentId, open]);
+  }, [currentId, formality, open]);
 
   if (!statementId) return null;
 
@@ -116,7 +117,7 @@ export default function GraphPeek({ statementId }: GraphPeekProps) {
               )}
             </p>
             <Link
-              href={`/explore?id=${encodeURIComponent(currentId ?? '')}`}
+              href={`/explore?id=${encodeURIComponent(currentId ?? '')}&formality=${formality}`}
               title="Open in Explorer"
               className="p-0.5 text-slate-400 hover:text-brand shrink-0"
             >

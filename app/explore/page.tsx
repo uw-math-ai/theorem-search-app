@@ -46,6 +46,7 @@ async function apiSearch(query: string): Promise<Statement[]> {
     body: x.body as string | undefined,
     slogan: x.slogan as string | undefined,
     source: x.source as string | undefined,
+    formality: x.formality === 'formal' ? 'formal' : 'informal',
     paper: x.title ? { title: x.title as string, external_id: x.external_id as string ?? '', source: x.source as string ?? '' } : undefined,
   }));
 }
@@ -76,6 +77,7 @@ export default function ExplorePage() {
   const didDrag  = useRef(false);
 
   const selectedNode = nodes.find(n => n.statement_id === selectedId) ?? null;
+  const selectedFormality = selectedNode?.formality ?? 'informal';
 
   // ── Search ──────────────────────────────────────────────────────────────────
 
@@ -106,11 +108,13 @@ export default function ExplorePage() {
   // ── Deep link: /explore?id=<statement_id> starts the graph at that statement ─
 
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get('id');
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
     if (!id) return;
+    const formality = params.get('formality') === 'formal' ? 'formal' : 'informal';
     const rect = canvasRef.current?.getBoundingClientRect();
     // Placeholder name until the selection effect below loads the statement.
-    setNodes([{ statement_id: id, name: '…', x: rect ? rect.width / 2 : 400, y: rect ? rect.height / 2 : 300 }]);
+    setNodes([{ statement_id: id, name: '…', formality, x: rect ? rect.width / 2 : 400, y: rect ? rect.height / 2 : 300 }]);
     setSelectedId(id);
   }, []);
 
@@ -142,14 +146,14 @@ export default function ExplorePage() {
     if (!selectedId) { setNeighbors(null); return; }
     setLoadingNb(true);
     setNeighbors(null);
-    apiStatement(selectedId)
+    apiStatement(selectedId, selectedFormality)
       .then(({ statement, neighbors: nb }) => {
         setNodes(prev => prev.map(n => n.statement_id === selectedId ? { ...n, ...statement } : n));
         setNeighbors(nb);
       })
       .catch(() => setNeighbors([]))
       .finally(() => setLoadingNb(false));
-  }, [selectedId]);
+  }, [selectedId, selectedFormality]);
 
   // ── Global mouse move / up (handles node drag + pan) ─────────────────────────
 

@@ -2,12 +2,16 @@
 
 export interface Paper { title: string; external_id: string; source: string }
 
+// Formal (Lean) and informal statements have separate dependency tables.
+export type Formality = 'informal' | 'formal';
+
 export interface Statement {
   statement_id: string;
   name: string;
   body?: string;
   slogan?: string;
   source?: string;  // 'arXiv' | 'Lean Repo' | etc.
+  formality?: Formality;
   paper?: Paper;
 }
 
@@ -27,8 +31,11 @@ export const edgeColor = (t: string) => EDGE_COLOR[t] ?? '#94a3b8';
 // Response: { root: { statement_id, name, statement?: { body }, paper?: { title, external_id, source } },
 //             nodes: [{ statement_id, name, slogan }],
 //             edges: [{ src_id, dep_id, dep_name, location }] }
-export async function apiStatement(id: string): Promise<{ statement: Statement; neighbors: Neighbor[] }> {
-  const r = await fetch(`/api/graph/statement/${encodeURIComponent(id)}?direction=both`);
+export async function apiStatement(
+  id: string,
+  formality: Formality = 'informal',
+): Promise<{ statement: Statement; neighbors: Neighbor[] }> {
+  const r = await fetch(`/api/graph/statement/${encodeURIComponent(id)}?direction=both&formality=${formality}`);
   if (!r.ok) throw new Error('fetch failed');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { root, nodes, edges } = await r.json() as { root: any; nodes: any[]; edges: any[] };
@@ -41,6 +48,7 @@ export async function apiStatement(id: string): Promise<{ statement: Statement; 
 
   const statement: Statement = {
     statement_id: rootId,
+    formality,
     name: root.name as string,
     body: root.statement?.body as string | undefined,
     slogan: nodeMap.get(rootId)?.slogan,
@@ -70,6 +78,7 @@ export async function apiStatement(id: string): Promise<{ statement: Statement; 
         statement_id: depId,
         name: nb?.name ?? (edge.dep_name as string | undefined) ?? depId,
         slogan: nb?.slogan,
+        formality,
         edge_type: location,
         direction: 'src',  // root is src → root "uses" this neighbor
       });
@@ -83,6 +92,7 @@ export async function apiStatement(id: string): Promise<{ statement: Statement; 
         statement_id: srcId,
         name: nb.name,
         slogan: nb.slogan,
+        formality,
         edge_type: location,
         direction: 'dep',  // root is dep → neighbor "uses" root
       });
