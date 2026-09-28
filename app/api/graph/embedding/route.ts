@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const UPSTREAM = 'https://api.theoremsearch.com';
+// Override with THEOREM_SEARCH_API_URL to test against a local API.
+const UPSTREAM = process.env.THEOREM_SEARCH_API_URL ?? 'https://api.theoremsearch.com';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

@@ -3,7 +3,8 @@ import type { Theorem } from '@/src/types/theorem';
 
 // Search runs in the TheoremSearch API (/graph/embedding over the v2
 // database), so the website, the public API and MCP share one implementation.
-const UPSTREAM = 'https://api.theoremsearch.com';
+// Override with THEOREM_SEARCH_API_URL to test against a local API.
+const UPSTREAM = process.env.THEOREM_SEARCH_API_URL ?? 'https://api.theoremsearch.com';
 const UPSTREAM_TIMEOUT_MS = 30_000;
 
 // What the site calls "results": the default when no result type is picked.
