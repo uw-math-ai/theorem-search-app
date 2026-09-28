@@ -31,7 +31,8 @@ function childPos(parent: GraphNode, siblingIndex: number): { x: number; y: numb
   };
 }
 
-const trunc = (s: string, n: number) => s.length > n ? s.slice(0, n - 1) + '…' : s;
+const trunc = (s: string | undefined, n: number) =>
+  !s ? '' : s.length > n ? s.slice(0, n - 1) + '…' : s;
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 

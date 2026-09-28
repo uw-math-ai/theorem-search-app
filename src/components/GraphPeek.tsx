@@ -20,7 +20,8 @@ function arcPos(i: number, n: number, side: 1 | -1) {
   return { x: CX + side * R * Math.cos(a), y: CY + R * Math.sin(a) };
 }
 
-const trunc = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+const trunc = (s: string | undefined, n: number) =>
+  !s ? '' : s.length > n ? s.slice(0, n - 1) + '…' : s;
 
 interface GraphPeekProps {
   /** Statement to center on; changes when the user picks another result. */

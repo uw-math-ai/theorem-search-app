@@ -65,9 +65,13 @@ export async function apiStatement(
   const neighbors: Neighbor[] = [];
 
   for (const edge of edges) {
-    const srcId = edge.src_id as string;
-    const depId = edge.dep_id as string;
+    const srcId = edge.src_id as string | undefined;
+    const depId = edge.dep_id as string | undefined;
     const location = (edge.location ?? 'body') as string;
+
+    // An informal edge can cite a paper we never resolved to a statement
+    // (dep_id null, cite_key set). There is nothing to navigate to, so skip it.
+    if (!srcId || !depId) continue;
 
     if (srcId === rootId) {
       // Root uses depId as a dependency
@@ -76,7 +80,7 @@ export async function apiStatement(
       const nb = nodeMap.get(depId);
       neighbors.push({
         statement_id: depId,
-        name: nb?.name ?? (edge.dep_name as string | undefined) ?? depId,
+        name: nb?.name || (edge.dep_name as string | undefined) || depId,
         slogan: nb?.slogan,
         formality,
         edge_type: location,
@@ -90,7 +94,7 @@ export async function apiStatement(
       if (!nb) continue;
       neighbors.push({
         statement_id: srcId,
-        name: nb.name,
+        name: nb.name || srcId,
         slogan: nb.slogan,
         formality,
         edge_type: location,
