@@ -317,9 +317,20 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
           >
             <div className="py-3 px-4 bg-slate-50 rounded-xs border border-slate-100 overflow-x-auto">
               <p className="text-[10px] font-bold text-slate-500 mb-1.5">{displayName}</p>
-              <div className="text-sm text-slate-800">
-                <MathJax dynamic>{cleanedBody}</MathJax>
-              </div>
+              {cleanedBody ? (
+                <div className="text-sm text-slate-800">
+                  <MathJax dynamic>{cleanedBody}</MathJax>
+                </div>
+              ) : (
+                /* 182,651 of the 388,105 Lean declarations were ingested with an
+                   empty signature (every 'thm'/'def'/'inst' kind), and none of
+                   those carry a docstring either, so there is nothing precise
+                   to show for them. */
+                <p className="text-xs text-slate-400 italic">
+                  No statement text for this declaration in the dataset — see the plain-language
+                  slogan above, or open it at the source.
+                </p>
+              )}
             </div>
           </motion.div>
         </div>

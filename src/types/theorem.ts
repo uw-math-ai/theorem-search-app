@@ -2,7 +2,7 @@
 export interface Theorem {
   statement_id: string;        // v2 statement UUID
   theorem_name: string;        // e.g. "Theorem 3.6"
-  theorem_body: string;        // raw LaTeX body (formal: Lean signature)
+  theorem_body: string;        // raw LaTeX body (formal: Lean signature; may be empty)
   theorem_slogan: string;      // plain-language summary
   theorem_type: string;        // "theorem" | "lemma" | "proposition" | "corollary" | …
   formality?: string;          // "informal" | "formal"
