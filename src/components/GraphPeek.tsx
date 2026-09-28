@@ -11,7 +11,7 @@ const MIN_H = 260;
 const MAX_PER_SIDE = 8;          // dependencies on the left, dependents on the right
 const NODE_R = 9;
 const LABEL_PX_PER_CHAR = 4.3;   // 8px sans-serif, roughly
-const CAPTION_H = 46;            // hovered node's name + slogan
+const CAPTION_H = 60;            // name line + 2 clamped slogan lines + padding
 const HEADER_H = 62;             // drag bar + centered statement row
 
 interface GraphPeekProps {
@@ -105,6 +105,11 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
 
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [hovered, setHovered] = useState<Neighbor | null>(null);
+  // The graph area is whatever the fixed-height panel leaves between header
+  // and caption; measuring it (rather than subtracting constants) keeps the
+  // SVG exact and can't drift with font or zoom changes.
+  const graphRef = useRef<HTMLDivElement>(null);
+  const [graphBox, setGraphBox] = useState({ w: DEFAULT_W, h: DEFAULT_H - HEADER_H - CAPTION_H });
   const loading = open && currentId !== null && loaded?.id !== currentId;
   const center = loaded?.center ?? null;
   const neighbors = loading ? null : loaded?.neighbors ?? null;
@@ -121,6 +126,17 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
       });
     return () => { cancelled = true; };
   }, [currentId, formality, open]);
+
+  useEffect(() => {
+    const el = graphRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setGraphBox({ w: Math.round(width), h: Math.round(height) });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open]);
 
   // Drag the header to move, the top-left corner to resize.
   const startDrag = useCallback((mode: 'move' | 'resize') => (e: React.PointerEvent) => {
@@ -162,8 +178,8 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
 
   const allDeps = (neighbors ?? []).filter(n => n.direction === 'src');
   const allUsers = (neighbors ?? []).filter(n => n.direction === 'dep');
-  const svgW = size.w;
-  const svgH = Math.max(120, size.h - HEADER_H - CAPTION_H);
+  const svgW = graphBox.w;
+  const svgH = Math.max(100, graphBox.h);
   // Only as many nodes per side as the panel is tall enough to label clearly;
   // resizing taller shows more.
   const perSide = rowsThatFit(svgH);
@@ -176,8 +192,14 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
 
   return (
     <div
-      className="hidden md:flex flex-col fixed bottom-4 right-4 z-40 bg-white border border-slate-200 rounded-xs shadow-lg"
-      style={{ width: size.w, transform: `translate(${offset.x}px, ${offset.y}px)` }}
+      className="hidden md:flex flex-col fixed bottom-4 right-4 z-40 overflow-hidden bg-white border border-slate-200 rounded-xs shadow-lg"
+      style={{
+        width: size.w,
+        // Fixed while open: nothing inside (a hovered node's slogan) may
+        // change the panel's size.
+        height: open ? size.h : undefined,
+        transform: `translate(${offset.x}px, ${offset.y}px)`,
+      }}
     >
       {/* Resize handle, top-left corner */}
       {open && (
@@ -213,8 +235,8 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
       </div>
 
       {open && (
-        <div className="border-t border-slate-100">
-          <div className="px-3 pt-2 flex items-center gap-2 min-w-0">
+        <div className="flex flex-col flex-1 min-h-0 border-t border-slate-100">
+          <div className="px-3 pt-2 flex items-center gap-2 min-w-0 shrink-0">
             {trail.length > 1 && (
               <button
                 onClick={() => setTrail(trail.slice(0, -1))}
@@ -241,7 +263,7 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
             </a>
           </div>
 
-          <div className="relative">
+          <div ref={graphRef} className="relative flex-1 min-h-0 overflow-hidden">
             {loading && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
                 <Loader2 size={16} className="animate-spin text-slate-300" />
@@ -297,28 +319,26 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
             </svg>
           </div>
 
-          {/* Hovered node's slogan, or the hint that hovering shows it. */}
-          <div className="px-3 pb-2 border-t border-slate-100 pt-1.5" style={{ minHeight: CAPTION_H }}>
-            {hovered ? (
-              <>
-                <p className="text-[10px] font-semibold text-slate-700 truncate">{hovered.name}</p>
-                <p className="text-[10px] text-slate-500 leading-snug line-clamp-2">
-                  {hovered.slogan ?? 'No slogan for this statement.'}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-[10px] text-slate-400">
-                  {!loading && neighbors?.length === 0
-                    ? 'No dependencies recorded for this statement.'
-                    : `${allDeps.length} dependenc${allDeps.length === 1 ? 'y' : 'ies'} · ${allUsers.length} dependent${allUsers.length === 1 ? '' : 's'}`
-                      + (hiddenCount > 0 ? ` · ${hiddenCount} more in Explorer` : '')}
-                </p>
-                <p className="text-[10px] text-slate-400 italic">
-                  Hover a node for its slogan · click to centre it · drag to move, corner to resize.
-                </p>
-              </>
-            )}
+          {/* Hovered node's slogan, or the hint that hovering shows it. Fixed
+              height and clipped: this block must not resize on hover, or the
+              panel jitters as the pointer moves between nodes. */}
+          <div
+            className="px-3 pb-2 pt-1.5 shrink-0 overflow-hidden border-t border-slate-100"
+            style={{ height: CAPTION_H }}
+          >
+            <p className="text-[10px] font-semibold text-slate-700 truncate">
+              {hovered
+                ? hovered.name
+                : !loading && neighbors?.length === 0
+                  ? 'No dependencies recorded for this statement.'
+                  : `${allDeps.length} dependenc${allDeps.length === 1 ? 'y' : 'ies'} · ${allUsers.length} dependent${allUsers.length === 1 ? '' : 's'}`
+                    + (hiddenCount > 0 ? ` · ${hiddenCount} more in Explorer` : '')}
+            </p>
+            <p className={`text-[10px] leading-snug line-clamp-2 ${hovered ? 'text-slate-500' : 'text-slate-400 italic'}`}>
+              {hovered
+                ? hovered.slogan ?? 'No slogan for this statement.'
+                : 'Hover over a node for its slogan · click to focus it  ·  drag to move, corner to resize'}
+            </p>
           </div>
         </div>
       )}
