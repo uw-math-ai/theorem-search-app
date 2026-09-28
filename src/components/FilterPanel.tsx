@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useDeferredValue } from 'react';
-import { X, Search } from 'lucide-react';
+import { Check, X, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cleanAuthors } from '../lib/latexClean';
 
@@ -35,6 +35,10 @@ interface FilterPanelProps {
   absoluteYearMax: number;
   absoluteCitationMax: number;
   activeCount: number;
+  /** True when filters have been edited but the results don't reflect them yet. */
+  dirty?: boolean;
+  /** Apply the staged filter edits to the current query. */
+  onApply?: () => void;
   onClear: () => void;
 }
 
@@ -259,6 +263,8 @@ export default function FilterPanel({
   absoluteYearMax,
   absoluteCitationMax,
   activeCount,
+  dirty = false,
+  onApply,
   onClear,
 }: FilterPanelProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -284,14 +290,30 @@ export default function FilterPanel({
                 </span>
               )}
             </span>
-            {activeCount > 0 && (
-              <button
-                onClick={onClear}
-                className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-red-500 transition-colors"
-              >
-                <X size={11} /> Clear all
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {onApply && (
+                <button
+                  onClick={onApply}
+                  disabled={!dirty}
+                  title={dirty ? 'Apply these filters' : 'Results already match these filters'}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-xs text-[11px] font-semibold border transition-colors ${
+                    dirty
+                      ? 'bg-brand text-white border-brand hover:bg-brand/90'
+                      : 'bg-white text-slate-300 border-slate-200 cursor-default'
+                  }`}
+                >
+                  <Check size={11} /> {dirty ? 'Apply filters' : 'Applied'}
+                </button>
+              )}
+              {activeCount > 0 && (
+                <button
+                  onClick={onClear}
+                  className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  <X size={11} /> Clear all
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Main filters: Source, Category, Results per Search */}
@@ -417,6 +439,7 @@ export default function FilterPanel({
                           type="text"
                           value={filters.paperFilter}
                           onChange={e => setFilters({ ...filters, paperFilter: e.target.value })}
+                          onKeyDown={e => { if (e.key === 'Enter') onApply?.(); }}
                           placeholder="e.g. 2401.12345, Finite Hilbert stability"
                           maxLength={500}
                           className="w-full border border-slate-200 rounded px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-brand bg-white"
@@ -445,6 +468,7 @@ export default function FilterPanel({
                               max={filters.yearMax}
                               value={filters.yearMin}
                               onChange={e => setFilters({ ...filters, yearMin: Math.min(Number(e.target.value), filters.yearMax) })}
+                              onKeyDown={e => { if (e.key === 'Enter') onApply?.(); }}
                               className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
                             />
                           </div>
@@ -457,6 +481,7 @@ export default function FilterPanel({
                               max={absoluteYearMax}
                               value={filters.yearMax}
                               onChange={e => setFilters({ ...filters, yearMax: Math.max(Number(e.target.value), filters.yearMin) })}
+                              onKeyDown={e => { if (e.key === 'Enter') onApply?.(); }}
                               className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
                             />
                           </div>
@@ -474,6 +499,7 @@ export default function FilterPanel({
                               max={filters.citationMax}
                               value={filters.citationMin}
                               onChange={e => setFilters({ ...filters, citationMin: Math.min(Number(e.target.value), filters.citationMax) })}
+                              onKeyDown={e => { if (e.key === 'Enter') onApply?.(); }}
                               className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
                             />
                           </div>
@@ -486,6 +512,7 @@ export default function FilterPanel({
                               max={absoluteCitationMax}
                               value={filters.citationMax}
                               onChange={e => setFilters({ ...filters, citationMax: Math.max(Number(e.target.value), filters.citationMin) })}
+                              onKeyDown={e => { if (e.key === 'Enter') onApply?.(); }}
                               className="w-full border border-slate-200 rounded px-2 py-1.5 text-sm text-slate-700 focus:outline-none focus:border-brand"
                             />
                           </div>

@@ -104,6 +104,10 @@ export default function App() {
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const [metadata, setMetadata] = useState<Metadata | null>(null);
+  // Filters the results on screen were produced with. Editing filters stages
+  // the change (typing an arXiv id used to fire a search per keystroke); it is
+  // applied on Search / Apply / Enter.
+  const [appliedFilters, setAppliedFilters] = useState<Filters | null>(null);
   // Result shown in the corner dependency graph; follows the top result by default.
   const [graphTarget, setGraphTarget] = useState<Theorem | null>(null);
 
@@ -137,6 +141,7 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Search failed');
       setResults(data.results);
+      setAppliedFilters(f);
       setGraphTarget(data.results?.[0] ?? null);
       // Log query fire-and-forget
       fetch('/api/log-query', {
@@ -151,26 +156,37 @@ export default function App() {
     }
   }, [metadata]);
 
+  // Only a new query triggers a search on its own; filter edits wait for an
+  // explicit Search / Apply.
   useEffect(() => {
     if (activeQuery) doSearch(activeQuery, filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeQuery, filters]);
+  }, [activeQuery]);
 
-  const handleSearch = () => {
-    const q = searchInput.trim();
+  const runSearch = (q: string) => {
     if (!q) return;
     if (q === activeQuery) {
-      // same query, force re-search
-      doSearch(q, filters);
+      doSearch(q, filters);   // same query, re-run with the current filters
     } else {
-      setActiveQuery(q);
+      setActiveQuery(q);      // the effect above runs it
     }
+  };
+
+  const handleSearch = () => runSearch(searchInput.trim());
+
+  // Apply staged filter edits to the query already on screen.
+  const applyFilters = () => {
+    if (activeQuery) doSearch(activeQuery, filters);
   };
 
   const handleFilterChange = (f: Filters) => {
     setFilters(f);
     setCurrentPage(1);
   };
+
+  // Are there filter edits the results don't reflect yet?
+  const filtersDirty =
+    appliedFilters !== null && JSON.stringify(filters) !== JSON.stringify(appliedFilters);
 
   // Derive available authors/categories from selected sources (or all sources)
   const effectiveSources = useMemo(
@@ -335,6 +351,8 @@ export default function App() {
             absoluteYearMax={yearMax}
             absoluteCitationMax={citationMax}
             activeCount={activeCount}
+            dirty={filtersDirty}
+            onApply={applyFilters}
             onClear={() => handleFilterChange(makeDefaultFilters(yearMin, yearMax, citationMax))}
           />
         </div>
@@ -380,6 +398,14 @@ export default function App() {
               <div className="flex items-center justify-between mb-2 px-1">
                 <h3 className="text-[10px] font-bold tracking-widest text-slate-400">
                   Results ({results.length})
+                  {filtersDirty && (
+                    <button
+                      onClick={applyFilters}
+                      className="ml-2 font-semibold normal-case tracking-normal text-brand hover:underline"
+                    >
+                      filters changed — apply
+                    </button>
+                  )}
                 </h3>
                 <div className="flex items-center gap-2 text-[10px] text-slate-400">
                   <Info size={11} />
