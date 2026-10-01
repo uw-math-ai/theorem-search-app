@@ -14,7 +14,7 @@ interface TheoremCardProps {
   filters: Filters;
   /** Whether this result is the one shown in the corner dependency graph. */
   inGraph?: boolean;
-  onShowGraph?: () => void;
+  onShowGraph?: (theorem: Theorem) => void;
 }
 
 export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, activeQuery, filters, inGraph = false, onShowGraph }) => {
@@ -154,7 +154,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
 
             {onShowGraph && (
               <button
-                onClick={onShowGraph}
+                onClick={() => onShowGraph(theorem)}
                 title="Show in dependency graph"
                 className={`hidden md:flex items-center gap-1 px-2 py-1 border rounded-xs text-[9px] font-bold transition-all ${
                   inGraph

@@ -179,6 +179,11 @@ export default function App() {
     if (activeQuery) doSearch(activeQuery, filters);
   };
 
+  // Stable identity: an inline arrow here re-rendered every TheoremCard (and
+  // re-typeset its MathJax) on each keystroke, because React.memo saw a new
+  // prop every render.
+  const showGraph = useCallback((t: Theorem) => setGraphTarget(t), []);
+
   const handleFilterChange = (f: Filters) => {
     setFilters(f);
     setCurrentPage(1);
@@ -420,9 +425,9 @@ export default function App() {
                       key={t.statement_id}
                       theorem={t}
                       activeQuery={activeQuery}
-                      filters={filters}
+                      filters={appliedFilters ?? filters}
                       inGraph={t.statement_id === graphTarget?.statement_id}
-                      onShowGraph={() => setGraphTarget(t)}
+                      onShowGraph={showGraph}
                     />
                   ))
                 ) : (
