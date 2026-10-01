@@ -337,7 +337,7 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
             <p className={`text-[10px] leading-snug line-clamp-2 ${hovered ? 'text-slate-500' : 'text-slate-400 italic'}`}>
               {hovered
                 ? hovered.slogan ?? 'No slogan for this statement.'
-                : 'Hover over a node for its slogan · click to focus it  ·  drag to move, corner to resize'}
+                : 'Hover over a node for its slogan · click to focus it'}
             </p>
           </div>
         </div>
