@@ -5,6 +5,14 @@ const TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 interface Metadata {
   sources: string[];
+  /**
+   * Which sources actually hold statements of each formality. Today only
+   * Lean Repo has formal statements and every other source is entirely
+   * informal, so a formal search restricted to (say) arXiv matches nothing.
+   * The filter panel uses this to keep the source and formality controls
+   * consistent instead of letting the two produce an empty search.
+   */
+  sourcesByFormality: { informal: string[]; formal: string[] };
   authorsPerSource: Record<string, string[]>;
   tagsPerSource: Record<string, string[]>;
   theoremCount: number;
@@ -55,6 +63,10 @@ async function fetchMetadata(): Promise<Metadata> {
 
   const data: Metadata = {
     sources: stats.map(r => r.source),
+    sourcesByFormality: {
+      informal: stats.filter(r => Number(r.informal_statements) > 0).map(r => r.source),
+      formal: stats.filter(r => Number(r.formal_statements) > 0).map(r => r.source),
+    },
     authorsPerSource,
     tagsPerSource,
     theoremCount: stats.reduce((n, r) => n + Number(r.informal_statements) + Number(r.formal_statements), 0),

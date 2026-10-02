@@ -167,14 +167,19 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
               </button>
             )}
 
-            <a
-              href={theorem.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-2 py-1 bg-white border border-slate-200 rounded-xs text-[9px] font-bold text-brand hover:bg-brand hover:text-white transition-all active:scale-95"
-            >
-              Link
-            </a>
+            {/* Formal (Lean) statements have no per-statement URL, and an
+                empty href resolves to the current page — so the button would
+                silently reload the search instead of going anywhere. */}
+            {theorem.link && (
+              <a
+                href={theorem.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2 py-1 bg-white border border-slate-200 rounded-xs text-[9px] font-bold text-brand hover:bg-brand hover:text-white transition-all active:scale-95"
+              >
+                Link
+              </a>
+            )}
           </div>
 
           <div className="h-4 w-px bg-slate-200 hidden sm:block" />

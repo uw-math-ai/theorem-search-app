@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search, Filter, Info, Loader2 } from 'lucide-react';
@@ -72,6 +72,8 @@ function countActiveFilters(f: Filters, yearMin: number, yearMax: number, citati
 
 interface Metadata {
   sources: string[];
+  /** Sources holding statements of each formality; see /api/metadata. */
+  sourcesByFormality?: { informal: string[]; formal: string[] };
   authorsPerSource: Record<string, string[]>;
   tagsPerSource: Record<string, string[]>;
   theoremCount: number;
@@ -110,6 +112,13 @@ export default function App() {
   const [appliedFilters, setAppliedFilters] = useState<Filters | null>(null);
   // Result shown in the corner dependency graph; follows the top result by default.
   const [graphTarget, setGraphTarget] = useState<Theorem | null>(null);
+  // Bumped only when the user presses a result's Graph button, so the panel
+  // can open itself then without springing open after every ordinary search.
+  const [graphRequest, setGraphRequest] = useState(0);
+
+  // Sequence number and abort handle for in-flight searches; see doSearch.
+  const searchSeqRef = useRef(0);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = filters.topK;
@@ -129,6 +138,19 @@ export default function App() {
   const doSearch = useCallback(async (query: string, f: Filters) => {
     if (!query.trim()) return;
     if (!f.sources.length) { setResults(null); return; }
+
+    // Searches take anywhere from 0.2s to several seconds, so a slower earlier
+    // request can resolve after a faster later one. Without this guard its
+    // response would overwrite the newer results and applied filters, leaving
+    // the page showing stale results and a dirty filter panel the user had
+    // just applied. Abort the superseded request and ignore anything that
+    // comes back from a request that is no longer the current one.
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    const myRequest = ++searchSeqRef.current;
+    const isCurrent = () => myRequest === searchSeqRef.current;
+
     setIsSearching(true);
     setSearchError(null);
     setCurrentPage(1);
@@ -137,22 +159,29 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, filters: searchFilters(f, metadata) }),
+        signal: controller.signal,
       });
       const data = await res.json();
+      if (!isCurrent()) return;
       if (!res.ok) throw new Error(data.error ?? 'Search failed');
       setResults(data.results);
       setAppliedFilters(f);
       setGraphTarget(data.results?.[0] ?? null);
-      // Log query fire-and-forget
+      // Log query fire-and-forget. Only the search whose results the user
+      // actually sees is logged, so the query dashboard isn't filled with
+      // superseded keystroke-era searches.
       fetch('/api/log-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, filters: f }),
       }).catch(() => {});
     } catch (err) {
+      // An aborted request is a superseded one, not a failure to report.
+      if ((err as Error)?.name === 'AbortError' || !isCurrent()) return;
       setSearchError(String(err));
     } finally {
-      setIsSearching(false);
+      // Leave the spinner up if a newer search is still running.
+      if (isCurrent()) setIsSearching(false);
     }
   }, [metadata]);
 
@@ -182,7 +211,11 @@ export default function App() {
   // Stable identity: an inline arrow here re-rendered every TheoremCard (and
   // re-typeset its MathJax) on each keystroke, because React.memo saw a new
   // prop every render.
-  const showGraph = useCallback((t: Theorem) => setGraphTarget(t), []);
+  // Setters only, so the identity stays stable and TheoremCard's memo holds.
+  const showGraph = useCallback((t: Theorem) => {
+    setGraphTarget(t);
+    setGraphRequest(n => n + 1);
+  }, []);
 
   const handleFilterChange = (f: Filters) => {
     setFilters(f);
@@ -349,6 +382,7 @@ export default function App() {
             filters={filters}
             setFilters={handleFilterChange}
             availableSources={metadata?.sources ?? []}
+            sourcesByFormality={metadata?.sourcesByFormality}
             availableTypes={RESULT_TYPES}
             availableAuthors={availableAuthors}
             availableCategories={availableCategories}
@@ -477,6 +511,7 @@ export default function App() {
       <GraphPeek
         statementId={results?.length ? graphTarget?.statement_id ?? null : null}
         formality={graphTarget?.formality === 'formal' ? 'formal' : 'informal'}
+        openSignal={graphRequest}
       />
     </div>
   );
