@@ -305,8 +305,20 @@ export default function FilterPanel({
   // filters combine into a search that cannot match anything.
   const setFormality = (formality: Formality) => {
     const allowed = sourcesFor(formality);
+    // Metadata hasn't arrived yet, so we don't know which sources suit this
+    // formality. Record the choice and leave the sources alone — clearing
+    // them would leave a search that cannot run.
+    if (!allowed.length) {
+      setFilters({ ...filters, formality });
+      return;
+    }
+    // Sources that were impossible to select under the old formality are not
+    // a user preference, so widening adds them: Formal -> Both has to reach
+    // the informal corpus, and Informal -> Both has to reach Lean.
+    const unlocked = allowed.filter(s => !sourcesFor(filters.formality).includes(s));
     const kept = filters.sources.filter(s => allowed.includes(s));
-    setFilters({ ...filters, formality, sources: kept.length ? kept : allowed });
+    const next = [...new Set([...kept, ...unlocked])];
+    setFilters({ ...filters, formality, sources: next.length ? next : allowed });
   };
 
   return (

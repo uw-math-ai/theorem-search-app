@@ -129,7 +129,23 @@ export default function App() {
       .then(r => r.json())
       .then((data: Metadata) => {
         setMetadata(data);
-        setFilters(makeDefaultFilters(data.yearMin, data.yearMax, data.citationMax));
+        // Metadata supplies the real year/citation extents, but it arrives
+        // after the page is interactive — so adopt those extents without
+        // discarding anything the user already chose (a formality picked in
+        // the first second used to be reset back to Informal here). Only
+        // fields still sitting at the pre-metadata fallback are replaced.
+        setFilters(prev => {
+          const fallback = makeDefaultFilters();
+          const withExtents = makeDefaultFilters(data.yearMin, data.yearMax, data.citationMax);
+          return {
+            ...prev,
+            yearMin: prev.yearMin === fallback.yearMin ? withExtents.yearMin : prev.yearMin,
+            yearMax: prev.yearMax === fallback.yearMax ? withExtents.yearMax : prev.yearMax,
+            citationMax: prev.citationMax === fallback.citationMax
+              ? withExtents.citationMax
+              : prev.citationMax,
+          };
+        });
       })
       .catch(err => console.warn('Metadata fetch failed:', err));
   }, []);
@@ -137,7 +153,6 @@ export default function App() {
   // Run search whenever activeQuery or filters change
   const doSearch = useCallback(async (query: string, f: Filters) => {
     if (!query.trim()) return;
-    if (!f.sources.length) { setResults(null); return; }
 
     // Searches take anywhere from 0.2s to several seconds, so a slower earlier
     // request can resolve after a faster later one. Without this guard its
@@ -150,6 +165,16 @@ export default function App() {
     searchAbortRef.current = controller;
     const myRequest = ++searchSeqRef.current;
     const isCurrent = () => myRequest === searchSeqRef.current;
+
+    // Checked after taking the sequence number, not before: clearing the last
+    // source has to supersede an in-flight search too, or that response is
+    // still "current" when it lands and restores results for the source the
+    // user just removed.
+    if (!f.sources.length) {
+      setResults(null);
+      setIsSearching(false);
+      return;
+    }
 
     setIsSearching(true);
     setSearchError(null);
@@ -217,8 +242,34 @@ export default function App() {
     setGraphRequest(n => n + 1);
   }, []);
 
+  // Author and category options are derived from the selected sources, so a
+  // selection can outlive the control that offered it: pick an arXiv author,
+  // switch to Formal, and the source becomes Lean Repo (no authors) — the
+  // control disappears while the filter is still sent, giving no results with
+  // nothing visible to clear. Enforce it centrally so every path that changes
+  // sources is covered, not just the formality buttons.
+  const prunedForSources = (f: Filters): Filters => {
+    if (!metadata) return f;
+    const active = f.sources.length ? f.sources : metadata.sources;
+    const offered = (cap: 'authors' | 'tags') => {
+      const set = new Set<string>();
+      active
+        .filter(s => SOURCE_FILTERS[s]?.[cap] !== false)
+        .forEach(s => ((cap === 'authors' ? metadata.authorsPerSource : metadata.tagsPerSource)[s] ?? [])
+          .forEach(v => set.add(v)));
+      return set;
+    };
+    const authorsOffered = offered('authors');
+    const tagsOffered = offered('tags');
+    const authors = f.authors.filter(a => authorsOffered.has(a));
+    const categories = f.categories.filter(c => tagsOffered.has(c));
+    return authors.length === f.authors.length && categories.length === f.categories.length
+      ? f
+      : { ...f, authors, categories };
+  };
+
   const handleFilterChange = (f: Filters) => {
-    setFilters(f);
+    setFilters(prunedForSources(f));
     setCurrentPage(1);
   };
 
