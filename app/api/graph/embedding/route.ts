@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const UPSTREAM = 'https://api.theoremsearch.com';
+// Override with THEOREM_SEARCH_API_URL to test against a local API.
+const UPSTREAM = process.env.THEOREM_SEARCH_API_URL ?? 'https://api.theoremsearch.com';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const upstream = new URL(`${UPSTREAM}/graph/embedding`);
-  searchParams.forEach((v, k) => upstream.searchParams.set(k, v));
+  searchParams.forEach((v, k) => upstream.searchParams.append(k, v));
 
   const r = await fetch(upstream.toString());
   const data = await r.json();

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Theorem } from '../data/mockTheorems';
+import type { Theorem } from '../types/theorem';
 import { Filters } from './FilterPanel';
-import { ThumbsUp, ThumbsDown, User, BookOpen, Flag } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, User, BookOpen, Flag, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MathJax } from 'better-react-mathjax';
 import { cleanLatexForDisplay, cleanTheoremName, cleanAuthors } from '../lib/latexClean';
@@ -12,9 +12,12 @@ interface TheoremCardProps {
   theorem: Theorem;
   activeQuery: string;
   filters: Filters;
+  /** Whether this result is the one shown in the corner dependency graph. */
+  inGraph?: boolean;
+  onShowGraph?: (theorem: Theorem) => void;
 }
 
-export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, activeQuery, filters }) => {
+export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, activeQuery, filters, inGraph = false, onShowGraph }) => {
   const [showSlogan, setShowSlogan] = useState(true);
   const [showLatex, setShowLatex] = useState(false);
   const [vote, setVote] = useState<1 | -1 | null>(null);
@@ -48,7 +51,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          slogan_id: theorem.slogan_id,
+          statement_id: theorem.statement_id,
           reasons: selectedReasons,
           other_note: selectedReasons.includes('Other') ? otherText.trim() : null,
           query: activeQuery,
@@ -69,7 +72,7 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vote: v,
-          slogan_id: theorem.slogan_id,
+          statement_id: theorem.statement_id,
           query: activeQuery,
           url: theorem.link,
           theorem_name: theorem.theorem_name,
@@ -148,6 +151,21 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
                 Precise Statement
               </button>
             </div>
+
+            {onShowGraph && (
+              <button
+                onClick={() => onShowGraph(theorem)}
+                title="Show in dependency graph"
+                className={`hidden md:flex items-center gap-1 px-2 py-1 border rounded-xs text-[9px] font-bold transition-all ${
+                  inGraph
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-white text-slate-500 border-slate-200 hover:text-brand'
+                }`}
+              >
+                <Network size={10} />
+                Graph
+              </button>
+            )}
 
             <a
               href={theorem.link}
@@ -299,9 +317,20 @@ export const TheoremCard: React.FC<TheoremCardProps> = React.memo(({ theorem, ac
           >
             <div className="py-3 px-4 bg-slate-50 rounded-xs border border-slate-100 overflow-x-auto">
               <p className="text-[10px] font-bold text-slate-500 mb-1.5">{displayName}</p>
-              <div className="text-sm text-slate-800">
-                <MathJax dynamic>{cleanedBody}</MathJax>
-              </div>
+              {cleanedBody ? (
+                <div className="text-sm text-slate-800">
+                  <MathJax dynamic>{cleanedBody}</MathJax>
+                </div>
+              ) : (
+                /* 182,651 of the 388,105 Lean declarations were ingested with an
+                   empty signature (every 'thm'/'def'/'inst' kind), and none of
+                   those carry a docstring either, so there is nothing precise
+                   to show for them. */
+                <p className="text-xs text-slate-400 italic">
+                  No statement text for this declaration in the dataset — see the plain-language
+                  slogan above, or open it at the source.
+                </p>
+              )}
             </div>
           </motion.div>
         </div>

@@ -40,25 +40,28 @@ const PERFORMANCE = [
   { model: 'Ours',          theorem: '0.432', paper: '0.505', highlight: true },
 ];
 
+// Searchable theorems, lemmas, propositions and corollaries per source.
+// Definitions, remarks and other kinds are searchable too (12.2M statements).
 const SOURCES = [
-  { name: 'arXiv',                      count: '9,246,761' },
-  { name: 'ProofWiki',                  count: '23,871' },
-  { name: 'Stacks Project',             count: '12,693' },
-  { name: 'Open Logic Project',         count: '745' },
-  { name: 'CRing Project',              count: '546' },
-  { name: 'Stacks and Moduli',          count: '506' },
-  { name: 'HoTT Book',                  count: '382' },
-  { name: 'An Infinitely Large Napkin', count: '231' },
+  { name: 'arXiv',                      count: '8,104,539' },
+  { name: 'Lean Repo (formal)',         count: '285,213' },
+  { name: 'ProofWiki',                  count: '23,284' },
+  { name: 'Stacks Project',             count: '10,645' },
+  { name: 'Lean Community',             count: '1,888' },
+  { name: 'Open Logic Project',         count: '588' },
+  { name: 'CRing Project',              count: '498' },
+  { name: 'HoTT Book',                  count: '257' },
+  { name: 'An Infinitely Large Napkin', count: '228' },
 ];
 
 const HOW_IT_WORKS = [
   {
     title: 'Parse theorems.',
-    body: 'We extract over 9 million theorem statements from LaTeX sources across arXiv and seven other sources using a combination of plasTeX, TeX logging, and regex-based parsing.',
+    body: 'We extract over 12 million statements from LaTeX sources across arXiv and eight other sources, including formal Lean declarations, using a combination of plasTeX, TeX logging, and regex-based parsing.',
   },
   {
     title: 'Generate slogans.',
-    body: 'Each theorem is summarized into a concise natural-language description ("slogan") by DeepSeek V3 to convert formal LaTeX notation into searchable text.',
+    body: 'Each statement is summarized into a concise natural-language description ("slogan") by Qwen3-235B to convert formal LaTeX notation into searchable text.',
   },
   {
     title: 'Embed and index.',
@@ -71,8 +74,8 @@ const HOW_IT_WORKS = [
 ];
 
 const STATS = [
-  { value: '9M+',  label: 'Theorems indexed' },
-  { value: '7',    label: 'Sources' },
+  { value: '8.4M', label: 'Theorems indexed' },
+  { value: '9',    label: 'Sources' },
   { value: '70%',  label: 'More accurate than LLM search' },
   { value: '<5s',  label: 'Query latency' },
 ];

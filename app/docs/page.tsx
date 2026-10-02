@@ -356,7 +356,7 @@ export default function DocsPage() {
             <SectionHeading badge="GET">Graph Embedding Search</SectionHeading>
             <Endpoint method="GET" path="/graph/embedding" />
             <p className="text-slate-600 text-sm leading-relaxed">
-              Peform semantic search over the entire TheoremGraph corpus, formal and informal statements. Embeds the query with{' '}
+              Perform semantic search over the entire TheoremGraph corpus, formal and informal statements. Embeds the query with{' '}
               <Code>Qwen3-Embedding-8B</Code> and returns statements ranked by cosine similarity.
             </p>
 
@@ -366,6 +366,17 @@ export default function DocsPage() {
                 { name: 'query',     type: 'string',  required: true,  description: 'Natural-language description of the mathematical result to find.' },
                 { name: 'n_results', type: 'integer', default: '10',   description: 'Number of results to return.' },
                 { name: 'formality', type: 'string',  default: '"both"', description: 'Filter by corpus: "informal" (arXiv), "formal" (Lean), or "both".' },
+                { name: 'sources',   type: 'string[]', description: 'Filter by source, e.g. arXiv, Lean Repo, Lean Community. Repeat the parameter for multiple values.' },
+                { name: 'types',     type: 'string[]', description: 'Filter by statement kind, e.g. theorem, lemma, definition. Repeatable.' },
+                { name: 'authors',   type: 'string[]', description: 'Author substring match (any of). Repeatable.' },
+                { name: 'categories', type: 'string[]', description: 'Primary arXiv category, e.g. math.NT. Repeatable.' },
+                { name: 'year_min / year_max', type: 'integer', description: "Year of the paper's latest version. Papers without a date always pass." },
+                { name: 'paper_filter', type: 'string', description: 'Comma-separated arXiv IDs (prefix match) and/or title keywords.' },
+                { name: 'min_citations / citation_max', type: 'integer', description: 'arXiv citation-count range.' },
+                { name: 'include_unknown_citations', type: 'boolean', description: 'Papers with unknown citation counts (non-arXiv sources): true includes them, false excludes them; unset counts them as 0.' },
+                { name: 'in_journal', type: 'boolean', description: 'true: journal-published papers only; false: preprints only. Sources without publication metadata always pass.' },
+                { name: 'citation_weight', type: 'float', default: '0', description: 'Boost the score by citation_weight × ln(citations).' },
+                { name: 'mode',      type: 'string',  default: '"full"', description: '"minimal" returns only statement_id, paper_id, similarity and score.' },
               ]} />
             </div>
 
@@ -380,16 +391,22 @@ export default function DocsPage() {
   "results": [
     {
       "statement_id": "uuid",
+      "paper_id": "uuid",
       "name": "Theorem 1.1",
+      "kind": "theorem",
+      "formality": "informal",
       "body": "If f is continuous on [a, b] and differentiable on (a, b)...",
       "slogan": "Every continuous function on a closed interval has an antiderivative.",
-      "formality": "informal",
+      "source": "arXiv",
+      "title": "Real Analysis Notes",
+      "authors": ["A. Author"],
+      "url": "https://arxiv.org/abs/2301.00001",
+      "external_id": "2301.00001",
+      "categories": ["math.CA"],
+      "year": 2023,
+      "citation_count": 12,
       "similarity": 0.943,
-      "paper": {
-        "title": "Real Analysis Notes",
-        "external_id": "2301.00001",
-        "source": "arXiv"
-      }
+      "score": 0.943
     }
   ]
 }`}</CodeBlock>

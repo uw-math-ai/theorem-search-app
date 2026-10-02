@@ -3,23 +3,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Search, X, Loader2, ChevronRight } from 'lucide-react';
 import { SiteHeader } from '@/src/components/SiteHeader';
+import { apiStatement, edgeColor, EDGE_COLOR, type Neighbor, type Statement } from '@/src/lib/graphApi';
 
 const API_BASE = '/api/graph';
 const NODE_R = 26;
 const CHILD_DIST = 210;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Paper { title: string; external_id: string; source: string }
-
-interface Statement {
-  statement_id: string;
-  name: string;
-  body?: string;
-  slogan?: string;
-  source?: string;  // 'arXiv' | 'Lean Repo' | etc.
-  paper?: Paper;
-}
 
 interface GraphNode extends Statement { x: number; y: number }
 
@@ -30,20 +20,7 @@ interface GraphEdge {
   edge_type: string;
 }
 
-interface Neighbor extends Statement {
-  direction: 'src' | 'dep';
-  edge_type: string;
-}
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-// API edge `location` values
-const EDGE_COLOR: Record<string, string> = {
-  body:         '#7c3aed',
-  pre_context:  '#2563eb',
-  post_context: '#059669',
-};
-const edgeColor = (t: string) => EDGE_COLOR[t] ?? '#94a3b8';
+// ─── Layout ────────────────────────────────────────────────────────────────
 
 // Golden-angle spiral placement for children of a parent node
 function childPos(parent: GraphNode, siblingIndex: number): { x: number; y: number } {
@@ -54,7 +31,8 @@ function childPos(parent: GraphNode, siblingIndex: number): { x: number; y: numb
   };
 }
 
-const trunc = (s: string, n: number) => s.length > n ? s.slice(0, n - 1) + '…' : s;
+const trunc = (s: string | undefined, n: number) =>
+  !s ? '' : s.length > n ? s.slice(0, n - 1) + '…' : s;
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
@@ -69,76 +47,9 @@ async function apiSearch(query: string): Promise<Statement[]> {
     body: x.body as string | undefined,
     slogan: x.slogan as string | undefined,
     source: x.source as string | undefined,
+    formality: x.formality === 'formal' ? 'formal' : 'informal',
     paper: x.title ? { title: x.title as string, external_id: x.external_id as string ?? '', source: x.source as string ?? '' } : undefined,
   }));
-}
-
-// Response: { root: { statement_id, name, statement?: { body }, paper?: { title, external_id, source } },
-//             nodes: [{ statement_id, name, slogan }],
-//             edges: [{ src_id, dep_id, dep_name, location }] }
-async function apiStatement(id: string): Promise<{ statement: Statement; neighbors: Neighbor[] }> {
-  const r = await fetch(`${API_BASE}/statement/${id}?direction=both`);
-  if (!r.ok) throw new Error('fetch failed');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { root, nodes, edges } = await r.json() as { root: any; nodes: any[]; edges: any[] };
-
-  const nodeMap = new Map<string, { statement_id: string; name: string; slogan?: string }>(
-    nodes.map((n: { statement_id: string; name: string; slogan?: string }) => [n.statement_id, n])
-  );
-  const rootId = root.statement_id as string;
-  const paperSource: string | undefined = root.paper?.source;
-
-  const statement: Statement = {
-    statement_id: rootId,
-    name: root.name as string,
-    body: root.statement?.body as string | undefined,
-    slogan: nodeMap.get(rootId)?.slogan,
-    source: paperSource,
-    paper: root.paper ? {
-      title: root.paper.title as string,
-      external_id: root.paper.external_id as string,
-      source: root.paper.source as string,
-    } : undefined,
-  };
-
-  // Derive direct neighbors of root from edges
-  const seen = new Set<string>();
-  const neighbors: Neighbor[] = [];
-
-  for (const edge of edges) {
-    const srcId = edge.src_id as string;
-    const depId = edge.dep_id as string;
-    const location = (edge.location ?? 'body') as string;
-
-    if (srcId === rootId) {
-      // Root uses depId as a dependency
-      if (seen.has(depId)) continue;
-      seen.add(depId);
-      const nb = nodeMap.get(depId);
-      neighbors.push({
-        statement_id: depId,
-        name: nb?.name ?? (edge.dep_name as string | undefined) ?? depId,
-        slogan: nb?.slogan,
-        edge_type: location,
-        direction: 'src',  // root is src → root "uses" this neighbor
-      });
-    } else if (depId === rootId) {
-      // srcId uses root as a dependency
-      if (seen.has(srcId)) continue;
-      seen.add(srcId);
-      const nb = nodeMap.get(srcId);
-      if (!nb) continue;
-      neighbors.push({
-        statement_id: srcId,
-        name: nb.name,
-        slogan: nb.slogan,
-        edge_type: location,
-        direction: 'dep',  // root is dep → neighbor "uses" root
-      });
-    }
-  }
-
-  return { statement, neighbors };
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -167,6 +78,7 @@ export default function ExplorePage() {
   const didDrag  = useRef(false);
 
   const selectedNode = nodes.find(n => n.statement_id === selectedId) ?? null;
+  const selectedFormality = selectedNode?.formality ?? 'informal';
 
   // ── Search ──────────────────────────────────────────────────────────────────
 
@@ -193,6 +105,19 @@ export default function ExplorePage() {
     const y = rect ? (rect.height / 2 - vp.y) / vp.scale : 300;
     setNodes(prev => [...prev, { ...stmt, x, y }]);
   }, [nodes, vp]);
+
+  // ── Deep link: /explore?id=<statement_id> starts the graph at that statement ─
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    if (!id) return;
+    const formality = params.get('formality') === 'formal' ? 'formal' : 'informal';
+    const rect = canvasRef.current?.getBoundingClientRect();
+    // Placeholder name until the selection effect below loads the statement.
+    setNodes([{ statement_id: id, name: '…', formality, x: rect ? rect.width / 2 : 400, y: rect ? rect.height / 2 : 300 }]);
+    setSelectedId(id);
+  }, []);
 
   // ── Traverse to a neighbor ────────────────────────────────────────────────────
 
@@ -222,14 +147,14 @@ export default function ExplorePage() {
     if (!selectedId) { setNeighbors(null); return; }
     setLoadingNb(true);
     setNeighbors(null);
-    apiStatement(selectedId)
+    apiStatement(selectedId, selectedFormality)
       .then(({ statement, neighbors: nb }) => {
         setNodes(prev => prev.map(n => n.statement_id === selectedId ? { ...n, ...statement } : n));
         setNeighbors(nb);
       })
       .catch(() => setNeighbors([]))
       .finally(() => setLoadingNb(false));
-  }, [selectedId]);
+  }, [selectedId, selectedFormality]);
 
   // ── Global mouse move / up (handles node drag + pan) ─────────────────────────
 

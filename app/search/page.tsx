@@ -4,13 +4,17 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search, Filter, Info, Loader2 } from 'lucide-react';
-import { Theorem } from '@/src/data/mockTheorems';
+import type { Theorem } from '@/src/types/theorem';
 import { TheoremCard } from '@/src/components/TheoremCard';
 import FilterPanel, { Filters } from '@/src/components/FilterPanel';
+import GraphPeek from '@/src/components/GraphPeek';
 
-// Source-level filter capabilities (mirrors SOURCE_FILTERS in utils.py)
+// Source-level filter capabilities: which paper metadata each source has.
 const SOURCE_FILTERS: Record<string, { authors: boolean; tags: boolean; year: boolean }> = {
   'arXiv':                       { authors: true,  tags: true,  year: true  },
+  'Lean Community':              { authors: true,  tags: false, year: false },
+  'Lean Repo':                   { authors: false, tags: false, year: false },
+  'Lean Graph':                  { authors: false, tags: false, year: false },
   'Stacks Project':              { authors: false, tags: true,  year: false },
   'ProofWiki':                   { authors: false, tags: false, year: false },
   'An Infinitely Large Napkin':  { authors: false, tags: false, year: false },
@@ -31,6 +35,7 @@ function makeDefaultFilters(
 ): Filters {
   return {
     sources: ['arXiv'],
+    formality: 'informal',
     types: [],
     authors: [],
     categories: [],
@@ -53,6 +58,7 @@ function countActiveFilters(f: Filters, yearMin: number, yearMax: number, citati
     f.sources.length !== DEFAULT_SOURCES.length ||
     f.sources.some(s => !DEFAULT_SOURCES.includes(s));
   if (sourcesChanged) n++;
+  if (f.formality !== 'informal') n++;
   if (f.types.length) n++;
   if (f.authors.length) n++;
   if (f.categories.length) n++;
@@ -74,6 +80,18 @@ interface Metadata {
   citationMax: number;
 }
 
+// Range filters left at their full extent are no-ops; leave them out so the
+// search API doesn't treat them as active (filtered searches take a slower path).
+function searchFilters(f: Filters, m: Metadata | null) {
+  if (!m) return f;
+  return {
+    ...f,
+    yearMin: f.yearMin > m.yearMin ? f.yearMin : undefined,
+    yearMax: f.yearMax < m.yearMax ? f.yearMax : undefined,
+    citationMax: f.citationMax < m.citationMax ? f.citationMax : undefined,
+  };
+}
+
 export default function App() {
   const [searchInput, setSearchInput] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
@@ -86,6 +104,12 @@ export default function App() {
   const [searchError, setSearchError] = useState<string | null>(null);
 
   const [metadata, setMetadata] = useState<Metadata | null>(null);
+  // Filters the results on screen were produced with. Editing filters stages
+  // the change (typing an arXiv id used to fire a search per keystroke); it is
+  // applied on Search / Apply / Enter.
+  const [appliedFilters, setAppliedFilters] = useState<Filters | null>(null);
+  // Result shown in the corner dependency graph; follows the top result by default.
+  const [graphTarget, setGraphTarget] = useState<Theorem | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = filters.topK;
@@ -112,11 +136,13 @@ export default function App() {
       const res = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, filters: f }),
+        body: JSON.stringify({ query, filters: searchFilters(f, metadata) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Search failed');
       setResults(data.results);
+      setAppliedFilters(f);
+      setGraphTarget(data.results?.[0] ?? null);
       // Log query fire-and-forget
       fetch('/api/log-query', {
         method: 'POST',
@@ -128,28 +154,44 @@ export default function App() {
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [metadata]);
 
+  // Only a new query triggers a search on its own; filter edits wait for an
+  // explicit Search / Apply.
   useEffect(() => {
     if (activeQuery) doSearch(activeQuery, filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeQuery, filters]);
+  }, [activeQuery]);
 
-  const handleSearch = () => {
-    const q = searchInput.trim();
+  const runSearch = (q: string) => {
     if (!q) return;
     if (q === activeQuery) {
-      // same query, force re-search
-      doSearch(q, filters);
+      doSearch(q, filters);   // same query, re-run with the current filters
     } else {
-      setActiveQuery(q);
+      setActiveQuery(q);      // the effect above runs it
     }
   };
+
+  const handleSearch = () => runSearch(searchInput.trim());
+
+  // Apply staged filter edits to the query already on screen.
+  const applyFilters = () => {
+    if (activeQuery) doSearch(activeQuery, filters);
+  };
+
+  // Stable identity: an inline arrow here re-rendered every TheoremCard (and
+  // re-typeset its MathJax) on each keystroke, because React.memo saw a new
+  // prop every render.
+  const showGraph = useCallback((t: Theorem) => setGraphTarget(t), []);
 
   const handleFilterChange = (f: Filters) => {
     setFilters(f);
     setCurrentPage(1);
   };
+
+  // Are there filter edits the results don't reflect yet?
+  const filtersDirty =
+    appliedFilters !== null && JSON.stringify(filters) !== JSON.stringify(appliedFilters);
 
   // Derive available authors/categories from selected sources (or all sources)
   const effectiveSources = useMemo(
@@ -314,6 +356,8 @@ export default function App() {
             absoluteYearMax={yearMax}
             absoluteCitationMax={citationMax}
             activeCount={activeCount}
+            dirty={filtersDirty}
+            onApply={applyFilters}
             onClear={() => handleFilterChange(makeDefaultFilters(yearMin, yearMax, citationMax))}
           />
         </div>
@@ -359,6 +403,14 @@ export default function App() {
               <div className="flex items-center justify-between mb-2 px-1">
                 <h3 className="text-[10px] font-bold tracking-widest text-slate-400">
                   Results ({results.length})
+                  {filtersDirty && (
+                    <button
+                      onClick={applyFilters}
+                      className="ml-2 font-semibold normal-case tracking-normal text-brand hover:underline"
+                    >
+                      filters changed — apply
+                    </button>
+                  )}
                 </h3>
                 <div className="flex items-center gap-2 text-[10px] text-slate-400">
                   <Info size={11} />
@@ -369,7 +421,14 @@ export default function App() {
               <div className="grid gap-4">
                 {paginatedResults.length > 0 ? (
                   paginatedResults.map(t => (
-                    <TheoremCard key={t.slogan_id} theorem={t} activeQuery={activeQuery} filters={filters} />
+                    <TheoremCard
+                      key={t.statement_id}
+                      theorem={t}
+                      activeQuery={activeQuery}
+                      filters={appliedFilters ?? filters}
+                      inGraph={t.statement_id === graphTarget?.statement_id}
+                      onShowGraph={showGraph}
+                    />
                   ))
                 ) : (
                   <div className="text-center py-20 bg-white border border-dashed border-slate-300 rounded-xs">
@@ -415,6 +474,10 @@ export default function App() {
         </section>
       </main>
 
+      <GraphPeek
+        statementId={results?.length ? graphTarget?.statement_id ?? null : null}
+        formality={graphTarget?.formality === 'formal' ? 'formal' : 'informal'}
+      />
     </div>
   );
 }

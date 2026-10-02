@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { embedQuery } from '@/lib/embed';
-import type { PoolClient } from 'pg';
+import type { Theorem } from '@/src/types/theorem';
 
-const PER_SOURCE_MULTIPLIER = 3;
+// Search runs in the TheoremSearch API (/graph/embedding over the v2
+// database), so the website, the public API and MCP share one implementation.
+// Override with THEOREM_SEARCH_API_URL to test against a local API.
+const UPSTREAM = process.env.THEOREM_SEARCH_API_URL ?? 'https://api.theoremsearch.com';
+const UPSTREAM_TIMEOUT_MS = 30_000;
 
-function vecToSql(vec: number[]): string {
-  return '[' + vec.join(',') + ']';
-}
+// What the site calls "results": the default when no result type is picked.
+const DEFAULT_TYPES = ['theorem', 'lemma', 'proposition', 'corollary'];
+// Lean declarations only distinguish theorems (all of which the formal
+// ingester stores as 'theorem' or 'thm'), so any theorem-like type selects them.
+const THEOREM_LIKE = new Set(DEFAULT_TYPES);
+const FORMAL_THEOREM_KINDS = ['theorem', 'thm'];
+
+type Formality = 'informal' | 'formal' | 'both';
 
 interface SearchFilters {
   sources?: string[];
@@ -15,6 +22,7 @@ interface SearchFilters {
   authors?: string[];
   categories?: string[];
   publicationStatus?: string[];
+  formality?: Formality;
   yearMin?: number;
   yearMax?: number;
   topK?: number;
@@ -22,142 +30,82 @@ interface SearchFilters {
   citationMax?: number;
   includeUnknownCitations?: boolean;
   paperFilter?: string;
-  searchMode?: 'semantic' | 'rrf';
 }
 
-function parsePaperFilter(raw: string): { ids: string[]; titles: string[] } {
-  const ids: string[] = [];
-  const titles: string[] = [];
-  if (!raw?.trim()) return { ids, titles };
-  const arxivRe = /(?:arxiv\.org\/(?:abs|pdf)\/)?(\d{4}\.\d{4,5}|[a-z\-]+\/\d{7})/i;
-  for (const token of raw.split(',').map(t => t.trim()).filter(Boolean)) {
-    const m = arxivRe.exec(token);
-    if (m) ids.push(m[1].toLowerCase());
-    else titles.push(token.toLowerCase());
+function kindFilter(types: string[], formality: Formality): string[] {
+  const kinds = new Set(types.length ? types : DEFAULT_TYPES);
+  if (formality !== 'informal' && [...kinds].some(t => THEOREM_LIKE.has(t))) {
+    FORMAL_THEOREM_KINDS.forEach(k => kinds.add(k));
   }
-  return { ids, titles };
+  return [...kinds];
 }
 
-interface CandidateRow {
-  slogan_id: string;
+function buildUpstreamUrl(query: string, f: SearchFilters): URL {
+  const url = new URL(`${UPSTREAM}/graph/embedding`);
+  const q = url.searchParams;
+  const formality = f.formality ?? 'informal';
+
+  q.set('query', query);
+  q.set('n_results', String(Math.min(Math.max(f.topK ?? 20, 1), 100)));
+  q.set('formality', formality);
+  f.sources?.forEach(s => q.append('sources', s));
+  kindFilter(f.types ?? [], formality).forEach(t => q.append('types', t));
+  f.authors?.forEach(a => q.append('authors', a));
+  f.categories?.forEach(c => q.append('categories', c));
+
+  const pub = f.publicationStatus ?? [];
+  if (pub.length === 1) q.set('in_journal', String(pub[0] === 'Published'));
+
+  if (f.yearMin != null) q.set('year_min', String(f.yearMin));
+  if (f.yearMax != null) q.set('year_max', String(f.yearMax));
+
+  if (f.citationMin != null && f.citationMin > 0) q.set('min_citations', String(f.citationMin));
+  if (f.citationMax != null) q.set('citation_max', String(f.citationMax));
+  q.set('include_unknown_citations', String(f.includeUnknownCitations !== false));
+
+  if (f.paperFilter?.trim()) q.set('paper_filter', f.paperFilter.trim());
+  return url;
+}
+
+interface UpstreamResult {
+  statement_id: string;
+  name?: string;
+  kind?: string;
+  formality?: string;
+  body?: string;
+  slogan?: string;
+  source?: string;
+  title?: string;
+  authors?: string[];
+  url?: string;
+  categories?: string[];
+  year?: number;
+  journal_ref?: string | null;
+  citation_count?: number | null;
   similarity: number;
   score: number;
 }
 
-async function fetchCandidates(
-  client: PoolClient,
-  vecStr: string,
-  topK: number,
-  sources: string[],
-  filters: SearchFilters
-): Promise<CandidateRow[]> {
-  // Use an explicit transaction so SET LOCAL applies to all queries within it,
-  // matching the psycopg2 implicit-transaction behaviour in db.py.
-  await client.query('BEGIN');
-  await client.query(`SET LOCAL hnsw.ef_search = ${Math.max(80, topK * 4)}`);
-  await client.query(`SET LOCAL hnsw.iterative_scan = 'relaxed_order'`);
-
-  const all: CandidateRow[] = [];
-
-  try {
-    for (const source of sources) {
-      // Positional params: $1=source, $2=vec_ann, $3=limit, then filter params, then $N=vec_rerank
-      const params: unknown[] = [source, vecStr, topK * PER_SOURCE_MULTIPLIER];
-      const extra: string[] = [];
-
-      const p = (val: unknown) => { params.push(val); return `$${params.length}`; };
-
-      if (filters.types?.length)      extra.push(`theorem_type = ANY(${p(filters.types)})`);
-      if (filters.authors?.length)    extra.push(`authors && ${p(filters.authors)}`);
-      if (filters.categories?.length) extra.push(`primary_category = ANY(${p(filters.categories)})`);
-
-      if (filters.publicationStatus?.length) {
-        const clauses: string[] = [];
-        if (filters.publicationStatus.includes('Published')) clauses.push('(journal_published = true OR journal_published IS NULL)');
-        if (filters.publicationStatus.includes('Preprint'))  clauses.push('(journal_published = false OR journal_published IS NULL)');
-        if (clauses.length) extra.push(`(${clauses.join(' OR ')})`);
-      }
-
-      if (filters.yearMin != null)    extra.push(`(year >= ${p(filters.yearMin)} OR year IS NULL)`);
-      if (filters.yearMax != null)    extra.push(`(year <= ${p(filters.yearMax)} OR year IS NULL)`);
-
-      // Citation range (arXiv only; safe to apply to others — they'll just have NULL)
-      const hasCitationFilter =
-        (filters.citationMin != null && filters.citationMin > 0) ||
-        filters.citationMax != null;
-      if (hasCitationFilter) {
-        const low  = filters.citationMin ?? 0;
-        const high = filters.citationMax ?? 2_000_000;
-        if (filters.includeUnknownCitations !== false) {
-          extra.push(`(citations BETWEEN ${p(low)} AND ${p(high)} OR citations IS NULL)`);
-        } else {
-          extra.push(`citations BETWEEN ${p(low)} AND ${p(high)}`);
-        }
-      }
-
-      // Paper / arXiv ID filter
-      if (filters.paperFilter?.trim()) {
-        const { ids, titles } = parsePaperFilter(filters.paperFilter);
-        const orClauses: string[] = [];
-        if (ids.length)    orClauses.push(`paper_id LIKE ANY(${p(ids.map(id => id + '%'))})`);
-        if (titles.length) orClauses.push(`title ILIKE ANY(${p(titles.map(t => '%' + t + '%'))})`);
-        if (orClauses.length) extra.push(`(${orClauses.join(' OR ')})`);
-      }
-
-      const pRerank = p(vecStr); // rerank vec always last
-      const extraWhere = extra.length ? ' AND ' + extra.join(' AND ') : '';
-
-      const sql = `
-        WITH ann AS (
-          SELECT slogan_id, citations, embedding
-          FROM theorem_search_qwen8b
-          WHERE source = $1${extraWhere}
-          ORDER BY
-            (binary_quantize(embedding)::bit(4096))
-            <~>
-            binary_quantize($2::vector(4096))::bit(4096)
-          LIMIT $3
-        )
-        SELECT
-          slogan_id,
-          (1.0 - (embedding <=> ${pRerank}::vector(4096))) AS similarity,
-          (1.0 - (embedding <=> ${pRerank}::vector(4096))) AS score
-        FROM ann
-      `;
-
-      const { rows } = await client.query<CandidateRow>(sql, params);
-      all.push(...rows);
-    }
-  } finally {
-    await client.query('COMMIT');
-  }
-
-  all.sort((a, b) => Number(b.score) - Number(a.score));
-  return all.slice(0, topK);
-}
-
-async function fetchFullRows(client: PoolClient, candidates: CandidateRow[]) {
-  if (!candidates.length) return [];
-
-  const ids = candidates.map(r => r.slogan_id);
-  const scoreMap = new Map(candidates.map(r => [r.slogan_id, r]));
-
-  const { rows } = await client.query(
-    `SELECT
-       slogan_id, theorem_id, paper_id, theorem_name, theorem_body, theorem_slogan,
-       theorem_type, title, authors, link, year, journal_published,
-       primary_category, categories, citations, source, has_metadata
-     FROM theorem_search_qwen8b
-     WHERE slogan_id = ANY($1)
-     ORDER BY array_position($1, slogan_id)`,
-    [ids]
-  );
-
-  return rows.map(row => ({
-    ...row,
-    similarity: Number(scoreMap.get(row.slogan_id)?.similarity ?? 0),
-    score: Number(scoreMap.get(row.slogan_id)?.score ?? 0),
-  }));
+function toTheorem(r: UpstreamResult): Theorem {
+  return {
+    statement_id: r.statement_id,
+    theorem_name: r.name ?? '',
+    theorem_body: r.body ?? '',
+    theorem_slogan: r.slogan ?? '',
+    theorem_type: r.kind ?? '',
+    formality: r.formality,
+    title: r.title ?? '',
+    authors: r.authors ?? [],
+    source: r.source ?? '',
+    link: r.url ?? '',
+    year: r.year,
+    primary_category: r.categories?.[0],
+    citations: r.citation_count ?? null,
+    // Only arXiv carries publication metadata; elsewhere the status is unknown.
+    journal_published: r.source === 'arXiv' ? r.journal_ref != null : null,
+    similarity: r.similarity,
+    score: r.score,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -167,31 +115,26 @@ export async function POST(req: NextRequest) {
     if (!query?.trim()) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
-
-    const pool = await getPool();
-    const topK = filters.topK ?? 20;
-
-    // Resolve sources: use selected or fall back to all
-    let sources = filters.sources ?? [];
-    if (!sources.length) {
-      const { rows } = await pool.query('SELECT sources FROM mv_sources');
-      sources = rows[0]?.sources ?? [];
+    if (filters.sources && !filters.sources.length) {
+      return NextResponse.json({ results: [] });
     }
 
-    if (!sources.length) return NextResponse.json({ results: [] });
-
-    const vecStr = vecToSql(await embedQuery(query.trim()));
-
-    const client = await pool.connect();
-    try {
-      const candidates = await fetchCandidates(client, vecStr, topK, sources, filters);
-      const results = await fetchFullRows(client, candidates);
-      return NextResponse.json({ results });
-    } finally {
-      client.release();
+    const r = await fetch(buildUpstreamUrl(query.trim(), filters), {
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      console.error('[/api/search] upstream', r.status, data);
+      const error = r.status === 429
+        ? 'Too many searches right now; please try again in a moment.'
+        : 'Search failed';
+      return NextResponse.json({ error }, { status: r.status === 429 ? 429 : 502 });
     }
+
+    const results = ((data.results ?? []) as UpstreamResult[]).map(toTheorem);
+    return NextResponse.json({ results });
   } catch (err) {
     console.error('[/api/search]', err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: 'Search failed' }, { status: 500 });
   }
 }

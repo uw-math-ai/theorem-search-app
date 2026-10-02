@@ -47,16 +47,21 @@ Paper-level = retrieval of the correct paper containing the theorem</small></p>
 <h3>Data Sources</h3>
 
 <table>
-<tr><th>Source</th><th>Theorems</th></tr>
-<tr><td>arXiv</td><td>9,246,761</td></tr>
-<tr><td>ProofWiki</td><td>23,871</td></tr>
-<tr><td>Stacks Project</td><td>12,693</td></tr>
-<tr><td>Open Logic Project</td><td>745</td></tr>
-<tr><td>CRing Project</td><td>546</td></tr>
-<tr><td>Stacks and Moduli</td><td>506</td></tr>
-<tr><td>HoTT Book</td><td>382</td></tr>
-<tr><td>An Infinitely Large Napkin</td><td>231</td></tr>
+<tr><th>Source</th><th>Statements</th></tr>
+<tr><td>arXiv</td><td>8,104,539</td></tr>
+<tr><td>Lean Repo <em>(formal)</em></td><td>285,213</td></tr>
+<tr><td>ProofWiki</td><td>23,284</td></tr>
+<tr><td>Stacks Project</td><td>10,645</td></tr>
+<tr><td>Lean Community <em>(blueprints)</em></td><td>1,888</td></tr>
+<tr><td>Open Logic Project</td><td>588</td></tr>
+<tr><td>CRing Project</td><td>498</td></tr>
+<tr><td>HoTT Book</td><td>257</td></tr>
+<tr><td>An Infinitely Large Napkin</td><td>228</td></tr>
 </table>
+
+<p><small>Searchable theorems, lemmas, propositions and corollaries. Definitions,
+remarks and other statement kinds are searchable too, for a total of 12.2M
+statements.</small></p>
 
 </td>
 </tr>
@@ -101,13 +106,17 @@ TheoremSearch is also available as an MCP tool for AI agents with a single tool 
 ## Citation
 
 ```bibtex
-@article{alexander2026semantic,
-  title  = {Semantic Search over 9 Million Mathematical Theorems},
-  author = {Alexander, Luke and Leonen, Eric and Szeto, Sophie and Remizov, Artemii and Tejeda, Ignacio and Inchiostro, Giovanni and Ilin, Vasily},
-  journal= {arXiv preprint arXiv:2602.05216},
-  year   = {2026},
-  doi    = {10.48550/arXiv.2602.05216},
-  url    = {https://arxiv.org/abs/2602.05216}
+@inproceedings{alexander2026semantic,
+  author        = {Alexander, Luke and Leonen, Eric and Szeto, Sophie and Remizov, Artemii and Tejeda, Ignacio and Alper, Jarod and Inchiostro, Giovanni and Ilin, Vasily},
+  title         = {Semantic Search over 9 Million Mathematical Theorems},
+  booktitle     = {Advances in Neural Information Processing Systems},
+  volume        = {39},
+  year          = {2026},
+  note          = {Evaluations and Datasets Track},
+  archivePrefix = {arXiv},
+  eprint        = {2602.05216},
+  primaryClass  = {cs.IR},
+  url           = {https://arxiv.org/abs/2602.05216}
 }
 ```
 
