@@ -18,6 +18,14 @@ interface GraphPeekProps {
   /** Statement to center on; changes when the user picks another result. */
   statementId: string | null;
   formality?: Formality;
+  /**
+   * Incremented by the page when the user presses a result's Graph button.
+   * Below the wide breakpoint the panel starts collapsed, so pressing Graph
+   * would otherwise only swap the hidden statement and look like it did
+   * nothing. Only an explicit press bumps this, so an ordinary search still
+   * leaves a collapsed panel alone.
+   */
+  openSignal?: number;
 }
 
 // The panel starts expanded only where the results column leaves room for it.
@@ -85,10 +93,20 @@ function layout(deps: Neighbor[], users: Neighbor[], w: number, h: number): Plac
 
 
 /** Compact dependency-graph view of one search result, pinned to the page corner. */
-export default function GraphPeek({ statementId, formality = 'informal' }: GraphPeekProps) {
+export default function GraphPeek({ statementId, formality = 'informal', openSignal = 0 }: GraphPeekProps) {
   const wide = useSyncExternalStore(subscribeWide, isWide, () => false);
   const [toggled, setToggled] = useState<boolean | null>(null);
-  const open = toggled ?? wide;
+  // Which open-request has already been accounted for. An unseen request
+  // forces the panel open, derived rather than applied in an effect so there
+  // is no cascading render; collapsing marks the request seen so the user's
+  // choice sticks until they press Graph again.
+  const [seenSignal, setSeenSignal] = useState(0);
+  const open = openSignal > seenSignal ? true : (toggled ?? wide);
+
+  const setOpen = (next: boolean) => {
+    setSeenSignal(openSignal);
+    setToggled(next);
+  };
 
   // Panel geometry. `offset` moves it from its bottom-right anchor.
   const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
@@ -98,9 +116,17 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
 
   // Statements the user has clicked through, starting from `statementId`;
   // a new `statementId` starts a fresh trail.
-  const [walk, setWalk] = useState<{ root: string | null; trail: string[] }>({ root: null, trail: [] });
-  const trail = walk.root === statementId ? walk.trail : statementId ? [statementId] : [];
-  const setTrail = (next: string[]) => setWalk({ root: statementId, trail: next });
+  // Keyed on the open-request as well as the statement, so pressing Graph on
+  // a card returns to that statement instead of resuming wherever the last
+  // walk ended. Without the signal, following neighbours from a card and then
+  // pressing its Graph button again reopened the panel on the last neighbour.
+  const [walk, setWalk] = useState<{ root: string | null; signal: number; trail: string[] }>(
+    { root: null, signal: 0, trail: [] }
+  );
+  const walkIsCurrent = walk.root === statementId && walk.signal === openSignal;
+  const trail = walkIsCurrent ? walk.trail : statementId ? [statementId] : [];
+  const setTrail = (next: string[]) =>
+    setWalk({ root: statementId, signal: openSignal, trail: next });
   const currentId = trail[trail.length - 1] ?? null;
 
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -225,7 +251,7 @@ export default function GraphPeek({ statementId, formality = 'informal' }: Graph
           <GripVertical size={12} />
         </span>
         <button
-          onClick={() => setToggled(!open)}
+          onClick={() => setOpen(!open)}
           className="flex items-center gap-1.5 flex-1 min-w-0 text-[10px] font-bold tracking-widest text-slate-500 hover:text-brand transition-colors"
         >
           <Network size={12} />

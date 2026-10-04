@@ -28,6 +28,12 @@ interface FilterPanelProps {
   filters: Filters;
   setFilters: (f: Filters) => void;
   availableSources: string[];
+  /**
+   * Sources that hold statements of each formality, from /api/metadata. Only
+   * Lean Repo carries formal statements, so without this the default source
+   * (arXiv) plus "Formal (Lean)" is a guaranteed empty search.
+   */
+  sourcesByFormality?: { informal: string[]; formal: string[] };
   availableTypes: string[];
   availableAuthors: string[];
   availableCategories: string[];
@@ -52,12 +58,18 @@ function PillGroup({
   selected,
   onChange,
   displayFn = (s: string) => s,
+  disabledOptions,
+  disabledTitle,
 }: {
   label: string;
   options: string[];
   selected: string[];
   onChange: (next: string[]) => void;
   displayFn?: (s: string) => string;
+  /** Options that cannot be picked in the current state; shown muted. */
+  disabledOptions?: string[];
+  /** Tooltip explaining why they are muted. */
+  disabledTitle?: string;
 }) {
   if (!options.length) return null;
   return (
@@ -66,14 +78,19 @@ function PillGroup({
       <div className="flex flex-wrap gap-1.5">
         {options.map(opt => {
           const active = selected.includes(opt);
+          const disabled = disabledOptions?.includes(opt) ?? false;
           return (
             <button
               key={opt}
+              disabled={disabled}
+              title={disabled ? disabledTitle : undefined}
               onClick={() => onChange(toggleItem(selected, opt))}
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
-                active
-                  ? 'bg-brand text-white border-brand'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-brand/50 hover:text-brand'
+                disabled
+                  ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed line-through'
+                  : active
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-brand/50 hover:text-brand'
               }`}
             >
               {displayFn(opt)}
@@ -256,6 +273,7 @@ export default function FilterPanel({
   filters,
   setFilters,
   availableSources,
+  sourcesByFormality,
   availableTypes,
   availableAuthors,
   availableCategories,
@@ -269,6 +287,39 @@ export default function FilterPanel({
 }: FilterPanelProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  // Sources that can contain statements of a given formality. Without
+  // metadata every source stays selectable, so the controls behave as before.
+  const sourcesFor = (f: Formality): string[] => {
+    if (!sourcesByFormality) return availableSources;
+    const ok = f === 'both'
+      ? [...new Set([...sourcesByFormality.informal, ...sourcesByFormality.formal])]
+      : sourcesByFormality[f];
+    return availableSources.filter(s => ok.includes(s));
+  };
+
+  const allowedSources = sourcesFor(filters.formality);
+  const blockedSources = availableSources.filter(s => !allowedSources.includes(s));
+
+  // Changing formality has to move the source selection with it, or the two
+  // filters combine into a search that cannot match anything.
+  const setFormality = (formality: Formality) => {
+    const allowed = sourcesFor(formality);
+    // Metadata hasn't arrived yet, so we don't know which sources suit this
+    // formality. Record the choice and leave the sources alone — clearing
+    // them would leave a search that cannot run.
+    if (!allowed.length) {
+      setFilters({ ...filters, formality });
+      return;
+    }
+    // Sources that were impossible to select under the old formality are not
+    // a user preference, so widening adds them: Formal -> Both has to reach
+    // the informal corpus, and Informal -> Both has to reach Lean.
+    const unlocked = allowed.filter(s => !sourcesFor(filters.formality).includes(s));
+    const kept = filters.sources.filter(s => allowed.includes(s));
+    const next = [...new Set([...kept, ...unlocked])];
+    setFilters({ ...filters, formality, sources: next.length ? next : allowed });
+  };
 
   return (
     <AnimatePresence>
@@ -324,6 +375,8 @@ export default function FilterPanel({
                 options={availableSources}
                 selected={filters.sources}
                 onChange={sources => setFilters({ ...filters, sources })}
+                disabledOptions={blockedSources}
+                disabledTitle={`No ${filters.formality === 'formal' ? 'formal' : 'informal'} statements from this source`}
               />
               <div>
                 <p className="text-[10px] font-bold tracking-widest text-slate-400 mb-2">STATEMENTS</p>
@@ -331,7 +384,7 @@ export default function FilterPanel({
                   {FORMALITY_OPTIONS.map(({ value, label }) => (
                     <button
                       key={value}
-                      onClick={() => setFilters({ ...filters, formality: value })}
+                      onClick={() => setFormality(value)}
                       className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
                         filters.formality === value
                           ? 'bg-brand text-white border-brand'

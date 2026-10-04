@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search, Filter, Info, Loader2 } from 'lucide-react';
@@ -72,6 +72,8 @@ function countActiveFilters(f: Filters, yearMin: number, yearMax: number, citati
 
 interface Metadata {
   sources: string[];
+  /** Sources holding statements of each formality; see /api/metadata. */
+  sourcesByFormality?: { informal: string[]; formal: string[] };
   authorsPerSource: Record<string, string[]>;
   tagsPerSource: Record<string, string[]>;
   theoremCount: number;
@@ -110,6 +112,13 @@ export default function App() {
   const [appliedFilters, setAppliedFilters] = useState<Filters | null>(null);
   // Result shown in the corner dependency graph; follows the top result by default.
   const [graphTarget, setGraphTarget] = useState<Theorem | null>(null);
+  // Bumped only when the user presses a result's Graph button, so the panel
+  // can open itself then without springing open after every ordinary search.
+  const [graphRequest, setGraphRequest] = useState(0);
+
+  // Sequence number and abort handle for in-flight searches; see doSearch.
+  const searchSeqRef = useRef(0);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = filters.topK;
@@ -120,7 +129,23 @@ export default function App() {
       .then(r => r.json())
       .then((data: Metadata) => {
         setMetadata(data);
-        setFilters(makeDefaultFilters(data.yearMin, data.yearMax, data.citationMax));
+        // Metadata supplies the real year/citation extents, but it arrives
+        // after the page is interactive — so adopt those extents without
+        // discarding anything the user already chose (a formality picked in
+        // the first second used to be reset back to Informal here). Only
+        // fields still sitting at the pre-metadata fallback are replaced.
+        setFilters(prev => {
+          const fallback = makeDefaultFilters();
+          const withExtents = makeDefaultFilters(data.yearMin, data.yearMax, data.citationMax);
+          return {
+            ...prev,
+            yearMin: prev.yearMin === fallback.yearMin ? withExtents.yearMin : prev.yearMin,
+            yearMax: prev.yearMax === fallback.yearMax ? withExtents.yearMax : prev.yearMax,
+            citationMax: prev.citationMax === fallback.citationMax
+              ? withExtents.citationMax
+              : prev.citationMax,
+          };
+        });
       })
       .catch(err => console.warn('Metadata fetch failed:', err));
   }, []);
@@ -128,7 +153,29 @@ export default function App() {
   // Run search whenever activeQuery or filters change
   const doSearch = useCallback(async (query: string, f: Filters) => {
     if (!query.trim()) return;
-    if (!f.sources.length) { setResults(null); return; }
+
+    // Searches take anywhere from 0.2s to several seconds, so a slower earlier
+    // request can resolve after a faster later one. Without this guard its
+    // response would overwrite the newer results and applied filters, leaving
+    // the page showing stale results and a dirty filter panel the user had
+    // just applied. Abort the superseded request and ignore anything that
+    // comes back from a request that is no longer the current one.
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    const myRequest = ++searchSeqRef.current;
+    const isCurrent = () => myRequest === searchSeqRef.current;
+
+    // Checked after taking the sequence number, not before: clearing the last
+    // source has to supersede an in-flight search too, or that response is
+    // still "current" when it lands and restores results for the source the
+    // user just removed.
+    if (!f.sources.length) {
+      setResults(null);
+      setIsSearching(false);
+      return;
+    }
+
     setIsSearching(true);
     setSearchError(null);
     setCurrentPage(1);
@@ -137,22 +184,29 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, filters: searchFilters(f, metadata) }),
+        signal: controller.signal,
       });
       const data = await res.json();
+      if (!isCurrent()) return;
       if (!res.ok) throw new Error(data.error ?? 'Search failed');
       setResults(data.results);
       setAppliedFilters(f);
       setGraphTarget(data.results?.[0] ?? null);
-      // Log query fire-and-forget
+      // Log query fire-and-forget. Only the search whose results the user
+      // actually sees is logged, so the query dashboard isn't filled with
+      // superseded keystroke-era searches.
       fetch('/api/log-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, filters: f }),
       }).catch(() => {});
     } catch (err) {
+      // An aborted request is a superseded one, not a failure to report.
+      if ((err as Error)?.name === 'AbortError' || !isCurrent()) return;
       setSearchError(String(err));
     } finally {
-      setIsSearching(false);
+      // Leave the spinner up if a newer search is still running.
+      if (isCurrent()) setIsSearching(false);
     }
   }, [metadata]);
 
@@ -182,10 +236,40 @@ export default function App() {
   // Stable identity: an inline arrow here re-rendered every TheoremCard (and
   // re-typeset its MathJax) on each keystroke, because React.memo saw a new
   // prop every render.
-  const showGraph = useCallback((t: Theorem) => setGraphTarget(t), []);
+  // Setters only, so the identity stays stable and TheoremCard's memo holds.
+  const showGraph = useCallback((t: Theorem) => {
+    setGraphTarget(t);
+    setGraphRequest(n => n + 1);
+  }, []);
+
+  // Author and category options are derived from the selected sources, so a
+  // selection can outlive the control that offered it: pick an arXiv author,
+  // switch to Formal, and the source becomes Lean Repo (no authors) — the
+  // control disappears while the filter is still sent, giving no results with
+  // nothing visible to clear. Enforce it centrally so every path that changes
+  // sources is covered, not just the formality buttons.
+  const prunedForSources = (f: Filters): Filters => {
+    if (!metadata) return f;
+    const active = f.sources.length ? f.sources : metadata.sources;
+    const offered = (cap: 'authors' | 'tags') => {
+      const set = new Set<string>();
+      active
+        .filter(s => SOURCE_FILTERS[s]?.[cap] !== false)
+        .forEach(s => ((cap === 'authors' ? metadata.authorsPerSource : metadata.tagsPerSource)[s] ?? [])
+          .forEach(v => set.add(v)));
+      return set;
+    };
+    const authorsOffered = offered('authors');
+    const tagsOffered = offered('tags');
+    const authors = f.authors.filter(a => authorsOffered.has(a));
+    const categories = f.categories.filter(c => tagsOffered.has(c));
+    return authors.length === f.authors.length && categories.length === f.categories.length
+      ? f
+      : { ...f, authors, categories };
+  };
 
   const handleFilterChange = (f: Filters) => {
-    setFilters(f);
+    setFilters(prunedForSources(f));
     setCurrentPage(1);
   };
 
@@ -349,6 +433,7 @@ export default function App() {
             filters={filters}
             setFilters={handleFilterChange}
             availableSources={metadata?.sources ?? []}
+            sourcesByFormality={metadata?.sourcesByFormality}
             availableTypes={RESULT_TYPES}
             availableAuthors={availableAuthors}
             availableCategories={availableCategories}
@@ -477,6 +562,7 @@ export default function App() {
       <GraphPeek
         statementId={results?.length ? graphTarget?.statement_id ?? null : null}
         formality={graphTarget?.formality === 'formal' ? 'formal' : 'informal'}
+        openSignal={graphRequest}
       />
     </div>
   );
